@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detection Inspection #{{ record.id if record else 'N/A' }} | VisionTrack AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a href="/" class="nav-brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h5"/></svg>
+        <span>VisionTrack AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Detector</a>
+        <a href="/analytics" class="nav-link">Analytics Dashboard</a>
+      </div>
+    </nav>
+
+    {% if error %}
+      <div class="alert alert-danger">
+        <span>{{ error }}</span>
+        <a href="/" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem;">Back to Detector</a>
+      </div>
+    {% else %}
+      <!-- Breadcrumb & Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <a href="/" style="color: var(--accent-primary); text-decoration: none; font-size: 0.9rem;">&larr; Back to Upload</a>
+          <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 6px;">Detection Record #{{ record.id }}</h2>
+          <span style="color: var(--text-secondary); font-size: 0.85rem;">Logged on {{ record.timestamp }}</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span class="badge badge-info">Model: {{ record.model_used | upper }}</span>
+          <span class="badge badge-amber">⚡ {{ record.processing_time_ms }} ms</span>
+          <button id="delete-record-btn" data-id="{{ record.id }}" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85rem;">
+            Delete Record
+          </button>
+        </div>
+      </div>
+
+      <!-- Comparison Grid -->
+      <div class="grid-2" style="margin-bottom: 32px;">
+        <!-- Original Image -->
+        <div class="card">
+          <div class="card-title">
+            <span>Original Source Image</span>
+            <span class="badge badge-info">Source</span>
+          </div>
+          <div class="preview-container">
+            <img src="{{ url_for('static', filename='uploads/' + record.filename) }}" class="preview-img" alt="Original Image">
+          </div>
+        </div>
+
+        <!-- Annotated Image -->
+        <div class="card">
+          <div class="card-title">
+            <span>Annotated Detections</span>
+            <span class="badge badge-success">{{ record.count }} Found</span>
+          </div>
+          <div class="preview-container">
+            <img src="{{ url_for('static', filename='uploads/' + record.result_filename) }}" class="preview-img" alt="Annotated Detections">
+          </div>
+        </div>
+      </div>
+
+      <!-- Coordinates Table & JSON Inspector -->
+      <div class="card" style="margin-bottom: 32px;">
+        <div class="card-title">
+          <span>Spatial Bounding Box Coordinates</span>
+          <span class="badge badge-info">{{ record.coordinates | length }} Coordinates</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Box Index</th>
+                <th>X Offset</th>
+                <th>Y Offset</th>
+                <th>Width</th>
+                <th>Height</th>
+                <th>Area ($px^2$)</th>
+                <th>Centroid ($c_x, c_y$)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if record.coordinates and record.coordinates | length > 0 %}
+                {% for box in record.coordinates %}
+                  <tr>
+                    <td><strong>#{{ loop.index }}</strong></td>
+                    <td>{{ box.x }}</td>
+                    <td>{{ box.y }}</td>
+                    <td>{{ box.w }}</td>
+                    <td>{{ box.h }}</td>
+                    <td>{{ box.w * box.h }} px²</td>
+                    <td>({{ box.x + (box.w // 2) }}, {{ box.y + (box.h // 2) }})</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 24px;">
+                    No objects detected in this image frame.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Raw JSON Telemetry -->
+      <div class="card">
+        <div class="card-title">
+          <span>Raw Telemetry JSON</span>
+          <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="navigator.clipboard.writeText(document.getElementById('raw-json').innerText); alert('Copied to clipboard!');">
+            Copy JSON
+          </button>
+        </div>
+        <pre id="raw-json" style="background: rgba(15, 23, 42, 0.8); padding: 16px; border-radius: var(--radius-md); overflow-x: auto; color: #38bdf8; font-family: monospace; font-size: 0.9rem;">{{ record | tojson(indent=2) }}</pre>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const deleteBtn = document.getElementById('delete-record-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async () => {
+        const recordId = deleteBtn.getAttribute('data-id');
+        if (!confirm(`Are you sure you want to delete Detection Record #${recordId}?`)) return;
+        
+        try {
+          const res = await fetch(`/api/history/${recordId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok) {
+            alert('Record deleted successfully.');
+            window.location.href = '/analytics';
+          } else {
+            alert(data.error || 'Failed to delete record.');
+          }
+        } catch (err) {
+          alert('Network error while deleting record.');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

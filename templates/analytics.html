@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics & Performance Dashboard | VisionTrack AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js for data visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a href="/" class="nav-brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h5"/></svg>
+        <span>VisionTrack AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Detector</a>
+        <a href="/analytics" class="nav-link active">Analytics Dashboard</a>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="hero" style="margin-bottom: 28px;">
+      <h1>System Telemetry & Analytics Dashboard</h1>
+      <p>Continuous monitoring of inference performance, model usage distribution, and historical detection logs persisted in SQLite.</p>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="analytics-alert"></div>
+
+    <!-- KPI Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Images Processed</div>
+        <div class="metric-value" id="kpi-total-images">{{ summary.total_images }}</div>
+        <div class="metric-sub">Processed through API</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Total Objects Detected</div>
+        <div class="metric-value" id="kpi-total-detections" style="color: var(--accent-green);">{{ summary.total_detections }}</div>
+        <div class="metric-sub">Across all models</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Avg Objects / Image</div>
+        <div class="metric-value" id="kpi-avg-detections" style="color: var(--accent-primary);">{{ summary.avg_detections }}</div>
+        <div class="metric-sub">Detection density</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Avg Latency</div>
+        <div class="metric-value" id="kpi-avg-latency" style="color: var(--accent-amber);">{{ summary.avg_latency_ms }} <span style="font-size: 1rem; font-weight: normal;">ms</span></div>
+        <div class="metric-sub">Haar Cascade execution time</div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid-2" style="margin-bottom: 32px;">
+      <!-- Latency & Detection Trend -->
+      <div class="card">
+        <div class="card-title">
+          <span>Inference Latency & Counts Timeline</span>
+          <span class="badge badge-info">Performance</span>
+        </div>
+        <div style="height: 260px; position: relative;">
+          <canvas id="timelineChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Models Distribution Chart -->
+      <div class="card">
+        <div class="card-title">
+          <span>Model Invocations Breakdown</span>
+          <span class="badge badge-success">Models</span>
+        </div>
+        <div style="height: 260px; position: relative; display: flex; align-items: center; justify-content: center;">
+          <canvas id="modelsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Logs Table -->
+    <div class="card">
+      <div class="card-title">
+        <span>Detection Execution Logs</span>
+        <button id="refresh-logs-btn" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
+          ↻ Refresh
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="custom-table" id="history-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Timestamp</th>
+              <th>Model</th>
+              <th>Objects Found</th>
+              <th>Latency (ms)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            {% if history and history | length > 0 %}
+              {% for row in history %}
+                <tr id="row-{{ row.id }}">
+                  <td><strong>#{{ row.id }}</strong></td>
+                  <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ row.timestamp }}</td>
+                  <td><span class="badge badge-info">{{ row.model_used | upper }}</span></td>
+                  <td>
+                    <span class="badge {% if row.count > 0 %}badge-success{% else %}badge-amber{% endif %}">
+                      {{ row.count }} objects
+                    </span>
+                  </td>
+                  <td><code>{{ row.processing_time_ms }} ms</code></td>
+                  <td>
+                    <div style="display: flex; gap: 8px;">
+                      <a href="/result/{{ row.id }}" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">
+                        Inspect
+                      </a>
+                      <button class="btn btn-danger delete-btn" data-id="{{ row.id }}" style="padding: 4px 10px; font-size: 0.8rem;">
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr id="empty-row">
+                <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 32px;">
+                  No detection logs found. Upload and process images to populate the database.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+</body>
+</html>
