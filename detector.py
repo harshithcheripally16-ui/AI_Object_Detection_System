@@ -3,29 +3,50 @@ import time
 import cv2
 import numpy as np
 from ultralytics import YOLO
-from config import YOLO_MODEL_PATH, DEFAULT_CONFIDENCE
+from config import YOLO_MODEL_PATH, FALLBACK_MODEL_PATH, DETECTABLE_CLASSES, DEFAULT_CONFIDENCE
 
 class ObjectDetector:
     """
-    ObjectDetector handles multi-class object detection across 80+ everyday categories
-    using Ultralytics YOLOv8 architecture (yolov8n.pt).
+    ObjectDetector handles high-accuracy multi-class object detection across a rich
+    vocabulary of everyday objects, gaming gear (Razer mice, headphones), hands,
+    tech equipment, and living beings using Ultralytics YOLO-World / YOLOv8 architecture.
     """
     def __init__(self, model_path=YOLO_MODEL_PATH):
         self.model_path = model_path
-        self.model = YOLO(model_path)
+        self._load_model()
+
+    def _load_model(self):
+        """Loads model weights and configures the open-vocabulary classes."""
+        try:
+            if os.path.exists(self.model_path):
+                self.model = YOLO(self.model_path)
+            elif os.path.exists(FALLBACK_MODEL_PATH):
+                self.model = YOLO(FALLBACK_MODEL_PATH)
+            else:
+                self.model = YOLO(self.model_path)  # Auto-downloads if needed
+            
+            # Configure custom open-vocabulary classes if YOLO-World architecture
+            if hasattr(self.model, 'set_classes') and DETECTABLE_CLASSES:
+                try:
+                    self.model.set_classes(DETECTABLE_CLASSES)
+                except Exception as e:
+                    print(f"Warning: set_classes failed ({e}), using default model classes.")
+        except Exception as e:
+            # Fallback to standard YOLOv8n
+            print(f"Error loading {self.model_path}: {e}. Falling back to standard YOLOv8n.")
+            self.model = YOLO('models/yolov8n.pt')
 
     def detect(self, image_input, confidence=DEFAULT_CONFIDENCE):
         """
-        Runs YOLOv8 multi-class inference on an image path or numpy BGR array.
+        Runs YOLO inference on an image with a strict confidence threshold.
         
         Args:
             image_input: File path (str) or numpy ndarray (BGR image)
-            confidence (float): Confidence threshold (0.1 to 0.9)
+            confidence (float): Confidence threshold (0.05 to 0.95)
             
         Returns:
             tuple: (results, processing_time_ms)
         """
-        # Ensure image is valid
         if isinstance(image_input, str):
             if not os.path.exists(image_input):
                 raise FileNotFoundError(f"Image not found at {image_input}")
@@ -37,8 +58,11 @@ class ObjectDetector:
         else:
             raise TypeError("image_input must be a file path (str) or numpy ndarray")
 
+        # Clamp confidence threshold between 0.05 and 0.95
+        conf_val = max(0.05, min(0.95, float(confidence)))
+
         start_time = time.perf_counter()
-        results = self.model.predict(img, conf=confidence, verbose=False)
+        results = self.model.predict(img, conf=conf_val, iou=0.45, verbose=False)
         end_time = time.perf_counter()
 
         processing_time_ms = round((end_time - start_time) * 1000, 2)
@@ -46,7 +70,7 @@ class ObjectDetector:
 
     def draw_boxes(self, results):
         """
-        Uses Ultralytics native plot annotator to draw bounding boxes, class names,
+        Uses Ultralytics plot annotator to draw crisp bounding boxes, class names,
         and confidence percentages.
         
         Args:
@@ -61,7 +85,7 @@ class ObjectDetector:
 
     def get_stats(self, results):
         """
-        Extracts structured per-detection stats: class name, confidence, and bounding box.
+        Extracts structured per-detection stats: class name, confidence score, and bbox.
         
         Args:
             results: YOLO inference results list

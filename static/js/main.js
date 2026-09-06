@@ -34,10 +34,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 6000);
   }
 
-  // Confidence Slider event
+  // Confidence Slider & Preset Buttons
   if (confidenceSlider && confidenceVal) {
     confidenceSlider.addEventListener('input', () => {
       confidenceVal.textContent = `${Math.round(confidenceSlider.value * 100)}%`;
+    });
+
+    document.querySelectorAll('.conf-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseFloat(btn.getAttribute('data-val'));
+        confidenceSlider.value = val;
+        confidenceVal.textContent = `${Math.round(val * 100)}%`;
+        
+        // Highlight active preset
+        document.querySelectorAll('.conf-preset-btn').forEach(b => {
+          b.style.background = 'rgba(255,255,255,0.06)';
+          b.style.color = 'var(--text-primary)';
+          b.style.borderColor = 'transparent';
+        });
+        btn.style.background = 'rgba(56,189,248,0.15)';
+        btn.style.color = '#38bdf8';
+        btn.style.borderColor = 'rgba(56,189,248,0.3)';
+      });
     });
   }
 
