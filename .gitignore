@@ -6,6 +6,7 @@ venv/
 .pytest_cache/
 static/uploads/*
 !static/uploads/.gitkeep
+!static/uploads/Screenshot*.png
 detections.db
 *.db
 *.pt

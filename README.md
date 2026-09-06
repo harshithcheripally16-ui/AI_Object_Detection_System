@@ -1,4 +1,4 @@
-# Real-Time Object Detection & Analytics System (YOLOv8 Multi-Class Edition)
+# Real-Time Object Detection & Analytics System (YOLOv8 & YOLO-World Edition)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
@@ -7,66 +7,76 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-lightgrey.svg)](https://sqlite.org/)
 [![Pytest](https://img.shields.io/badge/pytest-Passing-brightgreen.svg)](https://pytest.org/)
 
-A production-grade, modular computer vision web application and RESTful API built with **Python, YOLOv8 (Ultralytics, `yolov8n.pt`), Flask, SQLite, and modern JavaScript/CSS3**.
+A production-grade, modular computer vision web application and RESTful API built with **Python, YOLO-World / YOLOv8 (Ultralytics), Flask, SQLite, and modern JavaScript/CSS3**.
 
-The system performs multi-class object detection across **80+ everyday categories** (phone, chair, person, TV, mouse, bottle, dog, car, laptop, etc.), allows dynamic **confidence threshold tuning** via a frontend slider, logs per-detection spatial telemetry into SQLite with full CRUD capabilities, and features an interactive Chart.js analytics dashboard.
+The system performs real-time multi-class object detection across a rich open vocabulary of everyday items, tech accessories (gaming mice, headphones, keyboards, laptops), human body parts (hands, faces, person), and living beings. It features real-time **confidence threshold tuning** (5% to 95%), SQLite logging with full CRUD operations, live MJPEG webcam streaming, and an interactive Chart.js analytics dashboard.
 
 ---
 
-## 📸 Application Preview & Screenshots
+## 📸 Real-World Live Detection Screenshots
 
-### 1. Main Detection & Upload Interface (with Confidence Slider)
-> Drag-and-drop file upload interface with real-time confidence threshold control (10% to 90%), live image preview, and multi-class YOLOv8 bounding box predictions.
+### 1. Live Webcam Object Detection in Action
+> Real-time detection across live camera feeds with dynamic HUD telemetry (**FPS**, **Model**, **Objects count**, **Latency in ms**) and active bounding boxes on everyday items:
+
+| Live Webcam Detection 1 | Live Webcam Detection 2 |
+|:---:|:---:|
+| ![Live Detection 1](docs/screenshots/live_detection_webcam_1.png) | ![Live Detection 2](docs/screenshots/live_detection_webcam_2.png) |
+
+| Live Webcam Detection 3 | Live Webcam Detection 4 |
+|:---:|:---:|
+| ![Live Detection 3](docs/screenshots/live_detection_webcam_3.png) | ![Live Detection 4](docs/screenshots/live_detection_webcam_4.png) |
+
+---
+
+## 🖼️ Static Image Detection (Real-World Internet Samples)
+
+> Multi-class inference and bounding-box localization on high-resolution real-world test scenes:
+
+### Gaming Gear & Desk Setup Detection
+| Original Real Image | YOLO Annotated Result |
+|:---:|:---:|
+| ![Gaming Mouse Sample](docs/screenshots/gaming_mouse_sample.jpg) | ![Annotated Gaming Mouse](docs/screenshots/annotated_gaming_mouse_sample.jpg) |
+
+### Modern Workspace & Laptop Detection
+| Original Real Image | YOLO Annotated Result |
+|:---:|:---:|
+| ![Workspace Sample](docs/screenshots/workspace_sample.jpg) | ![Annotated Workspace](docs/screenshots/annotated_workspace_sample.jpg) |
+
+---
+
+## 🖥️ Web Application Dashboard & Telemetry
+
+### Main Upload Interface (with Quick Confidence Presets)
+> Drag-and-drop file upload zone with interactive confidence threshold slider (5% to 95%) and one-click preset buttons for high sensitivity (Razer mouse, hands) or strict precision:
 ![Upload Dashboard](docs/screenshots/upload_dashboard.png)
 
----
-
-### 2. Live Webcam Stream & Real-Time MJPEG Telemetry
-> High-framerate real-time video streaming over `multipart/x-mixed-replace` with on-the-fly YOLOv8 multi-class inference, live FPS overlay, confidence tuning, and simulated fallback feed.
-![Live Webcam Stream](docs/screenshots/live_webcam_stream.png)
-
----
-
-### 3. Side-by-Side Result & Coordinate Telemetry Inspector
-> High-resolution side-by-side comparison (Original Source vs Annotated Output), per-object detection table (class label, confidence score, bounding box `[x1, y1, x2, y2]`), and raw JSON export.
+### Side-by-Side Result Inspector & Spatial Bounding Box Table
+> High-resolution side-by-side inspection with coordinate metrics, confidence scores, and raw JSON export:
 ![Detection Results](docs/screenshots/detection_results.png)
 
----
-
-### 4. Analytics & Performance Dashboard
-> Real-time system telemetry with KPI summary cards, Top 10 detected object classes bar chart, inference latency & count trends over time, and interactive SQLite history table with CRUD deletion.
+### Real-Time Analytics & Performance Dashboard
+> Real-time system telemetry with KPI cards, Top 10 detected object classes bar chart, latency trend line charts, and SQLite history table with CRUD deletion:
 ![Analytics Dashboard](docs/screenshots/analytics_dashboard.png)
 
 ---
 
 ## 🌟 Key Features
 
-- **80+ Category Multi-Class Detection**: Powered by Ultralytics YOLOv8 (`yolov8n.pt`) pre-trained on the MS COCO dataset (person, car, dog, bottle, chair, tv, phone, laptop, etc.).
-- **Confidence Threshold Control**: Frontend interactive slider allows dynamic confidence filtering from 10% to 90% (default: 50%).
-- **High-Performance Latency Telemetry**: Every inference run tracks precision inference execution time in milliseconds (`processing_time_ms`).
+- **Open-Vocabulary & Multi-Class Architecture**: Powered by Ultralytics YOLO-World / YOLOv8 with preloaded real-world vocabulary covering:
+  - 🖱️ **Gaming Gear & Tech**: `gaming mouse`, `computer mouse`, `headphones`, `headset`, `earbuds`, `keyboard`, `laptop`, `monitor`, `webcam`, `microphone`, `cell phone`, `usb cable`, etc.
+  - 🖐️ **Humans & Body Parts**: `person`, `hand`, `face`, `head`, `arm`.
+  - 👓 **Wearables & Everyday Items**: `watch`, `glasses`, `backpack`, `wallet`, `cup`, `water bottle`, `chair`, `desk`, `pen`, `book`, etc.
+  - 🐶 **Living Beings**: `dog`, `cat`, `bird`, `potted plant`, etc.
+- **Dynamic Confidence Threshold Tuning**: Interactive slider (5% to 95%) and preset buttons (`25% Sensitive`, `40% Recommended`, `75% High Precision`, `90% Strict`).
+- **Real-Time Latency Telemetry**: Sub-millisecond profiling tracking inference latency (`processing_time_ms`) on every request.
 - **Strict Input Validation & Security**:
-  - File extension verification against whitelist (`PNG`, `JPG`, `JPEG`, `WEBP`)
+  - Whitelist validation (`PNG`, `JPG`, `JPEG`, `WEBP`)
   - 16MB file payload limit (`MAX_CONTENT_LENGTH`)
-  - Image decode integrity checks (`cv2.imread` / OpenCV validation)
+  - OpenCV image decode validation (`cv2.imread`)
   - Standard HTTP status codes (`200`, `400`, `404`, `413`, `415`, `500`)
-- **Full CRUD RESTful API**: Complete REST endpoints including `POST /detect`, `GET /api/history`, `GET /api/history/<id>`, and `DELETE /api/history/<id>`.
-- **Relational Data Persistence**: SQLite logging with automatic schema creation, indexing, and JSON object telemetry storage.
-- **Glassmorphic Responsive UI**: Modern dark theme built with CSS3 variables, drag-and-drop zones, and Chart.js telemetry charts.
-- **100% Automated Pytest Coverage**: Comprehensive unit tests for the detection engine and API integration tests.
-
----
-
-## ⚠️ Notes on Dependencies & Image Formats
-
-> [!NOTE]
-> **OpenCV Package Choice (`opencv-python` vs `opencv-python-headless`)**:
-> - `opencv-python` is specified in `requirements.txt` for local development and desktop environments.
-> - For headless production environments (Docker containers, AWS/GCP servers with no GUI/display server), use `opencv-python-headless` instead.
-
-> [!WARNING]
-> **WebP Image Format Compatibility**:
-> - WebP (`.webp`) format is supported in validation and upload handling.
-> - Please note that detection results may vary depending on lossy compression levels compared to uncompressed JPEG or PNG formats.
+- **Full CRUD RESTful API**: Endpoints including `POST /detect`, `GET /api/history`, `GET /api/history/<id>`, and `DELETE /api/history/<id>`.
+- **Relational Persistence**: SQLite storage with automatic schema generation, indexes, and JSON spatial telemetry.
+- **100% Automated Pytest Coverage**: Unit tests for detection logic and API integration tests.
 
 ---
 
@@ -74,13 +84,50 @@ The system performs multi-class object detection across **80+ everyday categorie
 
 | Layer | Technology |
 |---|---|
-| **Deep Learning Model** | Ultralytics YOLOv8 Nano (`yolov8n.pt` — 6.2MB) |
+| **Deep Learning Engine** | Ultralytics YOLO-World / YOLOv8 (`yolov8s-worldv2.pt` / `yolov8n.pt`) |
 | **Backend Framework** | Flask 3.0 (Python) |
-| **Computer Vision Engine** | OpenCV (`cv2`) & NumPy |
+| **Computer Vision** | OpenCV (`cv2`) & NumPy |
 | **Database** | SQLite 3 (Indexed relational logging) |
 | **Frontend UI** | HTML5, Modern CSS3 Glassmorphism, Vanilla JavaScript |
 | **Data Visualization** | Chart.js 4.x |
 | **Testing Suite** | Pytest, Requests |
+
+---
+
+## 📂 Project Architecture & Directory Structure
+
+```
+AI_Object_Detection_System/
+├── app.py                     # Flask application & REST API routes (GET, POST, DELETE)
+├── detector.py                # OOP ObjectDetector class using Ultralytics YOLO
+├── database.py                # SQLite module with full CRUD operations & analytics
+├── config.py                  # Centralized configuration constants & YOLO vocabulary
+├── requirements.txt           # Production dependencies (Flask, Ultralytics, OpenCV, NumPy)
+├── requirements-dev.txt       # Development & testing dependencies (Pytest, Requests)
+├── .gitignore                 # Excludes caches, temporary databases, and large model weights
+├── models/
+│   ├── yolov8s-worldv2.pt     # Open-vocabulary model weights
+│   └── yolov8n.pt             # Fast nano weights
+├── static/
+│   ├── css/
+│   │   └── style.css          # Glassmorphic UI styling
+│   ├── js/
+│   │   ├── main.js            # Upload logic, confidence slider, bounding box rendering
+│   │   └── analytics.js       # Chart.js visualization & asynchronous CRUD actions
+│   └── uploads/               # Saved original, annotated, and live screenshot images
+├── templates/
+│   ├── index.html             # Upload & real-time detection page with confidence slider
+│   ├── live.html              # Real-time webcam streaming interface
+│   ├── result.html            # Side-by-side inspection & per-detection table
+│   └── analytics.html         # Performance metrics & historical CRUD table
+├── tests/
+│   ├── __init__.py
+│   ├── test_detector.py       # Unit tests for YOLO ObjectDetector OOP engine
+│   └── test_api.py            # API endpoint integration and validation tests
+├── docs/
+│   └── screenshots/           # Application and live detection screenshots
+└── README.md                  # Complete project documentation
+```
 
 ---
 
@@ -131,9 +178,73 @@ Run the complete test suite using `pytest`:
 pytest -v tests/
 ```
 
-### Test Suite Summary:
-- `tests/test_detector.py`: Tests YOLOv8 model initialization, inference execution, blank image handling, stats structure (`total` & `objects`), confidence cutoff, and bounding box drawing.
-- `tests/test_api.py`: Tests `GET /`, `GET /analytics`, `POST /detect` input validation (empty file, invalid extension, required JSON response keys), and `DELETE /api/history/<id>` CRUD lifecycle.
+---
+
+## 📡 REST API Reference
+
+### 1. Object Detection Endpoint
+`POST /detect`
+
+**Request Headers**: `Content-Type: multipart/form-data`  
+**Parameters**:
+- `image` (File, Required): Image file (`.png`, `.jpg`, `.jpeg`, `.webp`, Max: 16MB)
+- `confidence` (Float, Optional): Confidence threshold from `0.05` to `0.95` (Default: `0.40`)
+
+**Example `200 OK` Response**:
+```json
+{
+  "id": 12,
+  "result_image": "/static/uploads/result_abc123.jpg",
+  "original_image": "/static/uploads/upload_abc123.jpg",
+  "total_count": 3,
+  "confidence_used": 0.40,
+  "processing_time_ms": 94.5,
+  "result_page_url": "/result/12",
+  "detections": [
+    {"class": "gaming mouse", "confidence": 0.88, "bbox": [140.0, 220.0, 310.0, 390.0]},
+    {"class": "headphones", "confidence": 0.92, "bbox": [320.0, 110.0, 520.0, 340.0]},
+    {"class": "hand", "confidence": 0.79, "bbox": [180.0, 260.0, 280.0, 370.0]}
+  ]
+}
+```
+
+**HTTP Status Codes**:
+- `200 OK`: Detection successful.
+- `400 Bad Request`: Missing file, empty filename, or corrupted image.
+- `413 Payload Too Large`: Upload exceeds 16MB.
+- `415 Unsupported Media Type`: File extension not allowed.
+- `500 Internal Server Error`: Unexpected server or model error.
+
+---
+
+### 2. Analytics Telemetry Feed
+`GET /api/analytics-data`
+
+**Response**:
+```json
+{
+  "total_images": 45,
+  "total_objects": 118,
+  "avg_objects_per_image": 2.62,
+  "avg_processing_time_ms": 92.4,
+  "top_class": "Gaming mouse",
+  "class_distribution": [
+    {"class": "gaming mouse", "count": 38},
+    {"class": "headphones", "count": 31},
+    {"class": "hand", "count": 26},
+    {"class": "laptop", "count": 19},
+    {"class": "person", "count": 14}
+  ],
+  "timeline": [ ... ]
+}
+```
+
+---
+
+### 3. Historical Detections API
+- `GET /api/history`: List recent detection records.
+- `GET /api/history/<id>`: Retrieve specific detection by ID.
+- `DELETE /api/history/<id>`: Delete record and associated files.
 
 ---
 
