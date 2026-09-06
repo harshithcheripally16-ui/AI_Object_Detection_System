@@ -51,6 +51,20 @@ The system performs multi-model object and feature detection (Frontal Face, Eye,
 
 ---
 
+## ⚠️ Notes on Dependencies & Image Formats
+
+> [!NOTE]
+> **OpenCV Package Choice (`opencv-python` vs `opencv-python-headless`)**:
+> - `opencv-python` is specified in `requirements.txt` for local development and desktop environments where graphical display capabilities and standard OpenCV modules are needed.
+> - For headless production environments (Docker containers, AWS/GCP servers with no GUI/display server), use `opencv-python-headless` instead to avoid missing X11/GUI library dependencies.
+
+> [!WARNING]
+> **WebP Image Format Compatibility**:
+> - WebP (`.webp`) format is fully supported in validation and upload handling.
+> - Please note that Haar Cascade feature detection algorithms rely heavily on edge gradients and intensity transitions; highly compressed or lossy WebP images may yield slightly variable detection confidence compared to standard uncompressed JPEG or PNG formats.
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
@@ -105,7 +119,7 @@ AI_Object_Detection_System/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/AI_Object_Detection_System.git
+git clone https://github.com/harshithcheripally16-ui/AI_Object_Detection_System.git
 cd AI_Object_Detection_System
 ```
 
