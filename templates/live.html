@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Real-Time Object Detection | VisionTrack AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a href="/" class="nav-brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h5"/></svg>
+        <span>VisionTrack AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Upload & Detect</a>
+        <a href="/live" class="nav-link active">Live Webcam Stream</a>
+        <a href="/analytics" class="nav-link">Analytics Dashboard</a>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="hero" style="margin-bottom: 24px;">
+      <h1>Live Webcam Real-Time Detection</h1>
+      <p>High-framerate OpenCV VideoCapture & MJPEG multipart streaming with on-the-fly Haar Cascade inference and spatial HUD telemetry.</p>
+    </div>
+
+    <!-- Live Stream Card -->
+    <div class="card" style="max-width: 900px; margin: 0 auto 32px auto;">
+      <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-block; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 8px #ef4444; animation: pulse 1.5s infinite;"></span>
+          <span id="stream-status-text">LIVE MJPEG STREAM</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span id="active-model-badge" class="badge badge-info">Model: FACE</span>
+          <span class="badge badge-success">640 x 480</span>
+        </div>
+      </div>
+
+      <!-- Controls Panel -->
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 14px 18px; background: rgba(15, 23, 42, 0.6); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px;">
+          <label class="form-label" style="margin-bottom: 0; white-space: nowrap;" for="live-model-select">Target Model:</label>
+          <select id="live-model-select" class="select-model" style="padding: 8px 12px; font-size: 0.9rem;">
+            {% for key, val in models.items() %}
+              <option value="{{ key }}" {% if key == default_model %}selected{% endif %}>
+                {{ val.name }} ({{ val.label }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button id="toggle-stream-btn" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">
+            ⏸ Pause Stream
+          </button>
+          <button id="fullscreen-btn" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: rgba(255, 255, 255, 0.08); box-shadow: none;">
+            ⛶ Fullscreen
+          </button>
+        </div>
+      </div>
+
+      <!-- Video Feed Container -->
+      <div class="preview-container" id="video-wrapper" style="min-height: 480px; background: #000; border: 2px solid rgba(56, 189, 248, 0.3);">
+        <img id="live-stream" src="/video-feed?model={{ default_model }}" class="preview-img" style="width: 100%; height: auto; max-height: 520px; object-fit: contain;" alt="Live Webcam Object Detection Feed">
+      </div>
+
+      <!-- Instructions & Details -->
+      <div style="margin-top: 18px; display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+        <span>💡 Tip: Select different models from the dropdown to switch detection targets on-the-fly.</span>
+        <span>Stream protocol: <code>multipart/x-mixed-replace</code></span>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const streamImg = document.getElementById('live-stream');
+      const modelSelect = document.getElementById('live-model-select');
+      const activeBadge = document.getElementById('active-model-badge');
+      const toggleBtn = document.getElementById('toggle-stream-btn');
+      const fullscreenBtn = document.getElementById('fullscreen-btn');
+      const videoWrapper = document.getElementById('video-wrapper');
+      const statusText = document.getElementById('stream-status-text');
+
+      let isStreaming = true;
+
+      modelSelect.addEventListener('change', () => {
+        const selected = modelSelect.value;
+        activeBadge.textContent = `Model: ${selected.toUpperCase()}`;
+        if (isStreaming) {
+          streamImg.src = `/video-feed?model=${selected}&t=${Date.now()}`;
+        }
+      });
+
+      toggleBtn.addEventListener('click', () => {
+        isStreaming = !isStreaming;
+        if (isStreaming) {
+          const selected = modelSelect.value;
+          streamImg.src = `/video-feed?model=${selected}&t=${Date.now()}`;
+          toggleBtn.textContent = '⏸ Pause Stream';
+          toggleBtn.classList.remove('btn-danger');
+          toggleBtn.classList.add('btn-primary');
+          statusText.textContent = 'LIVE MJPEG STREAM';
+        } else {
+          streamImg.src = '';
+          toggleBtn.textContent = '▶ Resume Stream';
+          toggleBtn.classList.remove('btn-primary');
+          toggleBtn.classList.add('btn-danger');
+          statusText.textContent = 'STREAM PAUSED';
+        }
+      });
+
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          videoWrapper.requestFullscreen().catch(err => {
+            console.error(err);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

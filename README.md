@@ -20,13 +20,19 @@ The system performs multi-model object and feature detection (Frontal Face, Eye,
 
 ---
 
-### 2. Side-by-Side Result & Coordinate Telemetry Inspector
+### 2. Live Webcam Stream & Real-Time MJPEG Telemetry
+> Real-time video streaming over `multipart/x-mixed-replace` with dynamic model switching (Face, Eye, Full Body), live FPS overlay, bounding box inference, and fallback simulation.
+![Live Webcam Stream](docs/screenshots/live_webcam_stream.png)
+
+---
+
+### 3. Side-by-Side Result & Coordinate Telemetry Inspector
 > High-resolution side-by-side comparison (Original Source vs Annotated Output), bounding box coordinate metrics table, centroid calculations, and raw JSON export.
 ![Detection Results](docs/screenshots/detection_results.png)
 
 ---
 
-### 3. Analytics & Performance Dashboard
+### 4. Analytics & Performance Dashboard
 > Real-time system telemetry with KPI summary cards, inference latency trends over time, model distribution charts, and interactive SQLite history table with CRUD deletion.
 ![Analytics Dashboard](docs/screenshots/analytics_dashboard.png)
 

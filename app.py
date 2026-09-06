@@ -1,7 +1,9 @@
 import os
 import uuid
+import time
 import cv2
-from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
+import numpy as np
+from flask import Flask, render_template, request, jsonify, redirect, url_for, abort, Response
 from werkzeug.utils import secure_filename
 
 from config import (
@@ -40,6 +42,11 @@ def index():
     """Renders the main detection dashboard."""
     return render_template('index.html', models=MODELS, default_model=DEFAULT_MODEL)
 
+@app.route('/live')
+def live_view():
+    """Renders real-time live webcam object detection dashboard."""
+    return render_template('live.html', models=MODELS, default_model=DEFAULT_MODEL)
+
 @app.route('/result/<int:record_id>')
 def result_view(record_id):
     """Renders detailed side-by-side result inspector for a specific detection run."""
@@ -54,6 +61,119 @@ def analytics_view():
     summary = get_analytics_summary()
     history = get_all_detections(limit=50)
     return render_template('analytics.html', summary=summary, history=history)
+
+# ----------------- MJPEG Live Video Feed -----------------
+
+def generate_mjpeg_frames(model_type=DEFAULT_MODEL):
+    """
+    Generator yielding multipart MJPEG frames from OpenCV VideoCapture
+    with real-time Haar cascade inference and latency telemetry.
+    Includes graceful simulated feed fallback if camera hardware is unavailable.
+    """
+    if model_type not in MODELS:
+        model_type = DEFAULT_MODEL
+
+    cap = cv2.VideoCapture(0)
+    # Set standard resolution & buffer
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+    camera_available = cap.isOpened()
+    prev_frame_time = time.perf_counter()
+    sim_tick = 0
+
+    try:
+        while True:
+            if camera_available:
+                success, frame = cap.read()
+                if not success:
+                    camera_available = False
+                    continue
+            else:
+                # Simulated demo frame fallback when physical webcam is not attached
+                sim_tick += 1
+                frame = np.full((480, 640, 3), 25, dtype=np.uint8)
+                # Grid background
+                for x in range(0, 640, 40):
+                    cv2.line(frame, (x, 0), (x, 480), (35, 35, 35), 1)
+                for y in range(0, 480, 40):
+                    cv2.line(frame, (0, y), (640, y), (35, 35, 35), 1)
+
+                # Simulated moving target
+                center_x = int(320 + 140 * np.sin(sim_tick * 0.05))
+                center_y = int(240 + 70 * np.cos(sim_tick * 0.05))
+                cv2.ellipse(frame, (center_x, center_y), (60, 80), 0, 0, 360, (190, 200, 220), -1)
+                cv2.circle(frame, (center_x - 20, center_y - 15), 10, (40, 40, 40), -1)
+                cv2.circle(frame, (center_x + 20, center_y - 15), 10, (40, 40, 40), -1)
+                cv2.ellipse(frame, (center_x, center_y + 30), (25, 10), 0, 0, 180, (70, 70, 150), -1)
+
+                cv2.putText(
+                    frame,
+                    "SIMULATED FEED (Physical Webcam Offline)",
+                    (15, 460),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 165, 255),
+                    1,
+                    cv2.LINE_AA
+                )
+
+            # Perform detection on current frame
+            processed_frame, detections, latency_ms = detector.detect(frame, model_type=model_type)
+            annotated_frame = detector.draw_boxes(processed_frame, detections, model_type=model_type)
+
+            # Calculate FPS
+            curr_frame_time = time.perf_counter()
+            fps = 1.0 / (curr_frame_time - prev_frame_time) if (curr_frame_time - prev_frame_time) > 0 else 30.0
+            prev_frame_time = curr_frame_time
+
+            # Overlay real-time HUD telemetry
+            hud_bg_color = (15, 23, 42)
+            cv2.rectangle(annotated_frame, (0, 0), (640, 38), hud_bg_color, -1)
+            cv2.line(annotated_frame, (0, 38), (640, 38), (56, 189, 248), 1)
+
+            hud_text = f"FPS: {fps:.1f} | Model: {model_type.upper()} | Found: {len(detections)} | Latency: {latency_ms:.1f}ms"
+            cv2.putText(
+                annotated_frame,
+                hud_text,
+                (12, 25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (248, 250, 252),
+                1,
+                cv2.LINE_AA
+            )
+
+            # Encode frame to JPEG
+            ret, buffer = cv2.imencode('.jpg', annotated_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+            if not ret:
+                continue
+
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+            # Moderate streaming loop rate
+            time.sleep(0.03)
+
+    finally:
+        if cap and cap.isOpened():
+            cap.release()
+
+@app.route('/video-feed')
+def video_feed():
+    """
+    GET /video-feed?model=<face|eye|fullbody>
+    Streams live multipart MJPEG video with real-time Haar Cascade object detection.
+    """
+    model_type = request.args.get('model', DEFAULT_MODEL).strip().lower()
+    if model_type not in MODELS:
+        model_type = DEFAULT_MODEL
+    return Response(
+        generate_mjpeg_frames(model_type=model_type),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
 
 # ----------------- REST API Endpoints -----------------
 

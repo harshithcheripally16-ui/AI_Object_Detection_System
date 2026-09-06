@@ -32,6 +32,23 @@ def test_analytics_route(client):
     assert response.status_code == 200
     assert b'System Telemetry' in response.data
 
+def test_live_route(client):
+    """Test GET /live returns 200 and loads live webcam stream template."""
+    response = client.get('/live')
+    assert response.status_code == 200
+    assert b'Live Webcam' in response.data
+    assert b'/video-feed' in response.data
+
+def test_video_feed_stream(client):
+    """Test GET /video-feed returns multipart/x-mixed-replace stream."""
+    response = client.get('/video-feed?model=face')
+    assert response.status_code == 200
+    assert 'multipart/x-mixed-replace' in response.content_type
+    # Read first chunk of MJPEG stream
+    first_chunk = next(response.response)
+    assert b'--frame' in first_chunk
+    assert b'Content-Type: image/jpeg' in first_chunk
+
 def test_api_analytics_data(client):
     """Test GET /api/analytics-data returns expected JSON structure."""
     response = client.get('/api/analytics-data')
