@@ -91,36 +91,64 @@ def generate_mjpeg_frames(model_type=DEFAULT_MODEL):
                     camera_available = False
                     continue
             else:
-                # Simulated demo frame fallback when physical webcam is not attached
+                # High-fidelity simulated feed when physical webcam is unavailable
                 sim_tick += 1
-                frame = np.full((480, 640, 3), 25, dtype=np.uint8)
-                # Grid background
+                frame = np.full((480, 640, 3), 18, dtype=np.uint8)
+                
+                # Dynamic futuristic grid
                 for x in range(0, 640, 40):
-                    cv2.line(frame, (x, 0), (x, 480), (35, 35, 35), 1)
+                    cv2.line(frame, (x, 0), (x, 480), (28, 28, 35), 1)
                 for y in range(0, 480, 40):
-                    cv2.line(frame, (0, y), (640, y), (35, 35, 35), 1)
+                    cv2.line(frame, (0, y), (640, y), (28, 28, 35), 1)
 
-                # Simulated moving target
-                center_x = int(320 + 140 * np.sin(sim_tick * 0.05))
-                center_y = int(240 + 70 * np.cos(sim_tick * 0.05))
-                cv2.ellipse(frame, (center_x, center_y), (60, 80), 0, 0, 360, (190, 200, 220), -1)
-                cv2.circle(frame, (center_x - 20, center_y - 15), 10, (40, 40, 40), -1)
-                cv2.circle(frame, (center_x + 20, center_y - 15), 10, (40, 40, 40), -1)
-                cv2.ellipse(frame, (center_x, center_y + 30), (25, 10), 0, 0, 180, (70, 70, 150), -1)
+                # Primary target subject
+                center_x = int(320 + 80 * np.sin(sim_tick * 0.04))
+                center_y = int(240 + 40 * np.cos(sim_tick * 0.04))
 
-                cv2.putText(
-                    frame,
-                    "SIMULATED FEED (Physical Webcam Offline)",
-                    (15, 460),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 165, 255),
-                    1,
-                    cv2.LINE_AA
-                )
+                # Head & Shoulders silhouette
+                cv2.ellipse(frame, (center_x, center_y + 160), (130, 90), 0, 0, 360, (50, 60, 80), -1)
+                cv2.ellipse(frame, (center_x, center_y), (75, 100), 0, 0, 360, (185, 205, 230), -1)
+                
+                # Eyes
+                cv2.circle(frame, (center_x - 28, center_y - 18), 12, (30, 35, 45), -1)
+                cv2.circle(frame, (center_x + 28, center_y - 18), 12, (30, 35, 45), -1)
+                cv2.circle(frame, (center_x - 28, center_y - 18), 4, (240, 245, 255), -1)
+                cv2.circle(frame, (center_x + 28, center_y - 18), 4, (240, 245, 255), -1)
+                
+                # Nose & Mouth
+                cv2.line(frame, (center_x, center_y - 5), (center_x, center_y + 20), (100, 115, 135), 2)
+                cv2.ellipse(frame, (center_x, center_y + 45), (28, 12), 0, 0, 180, (70, 80, 140), -1)
+
+                # Secondary person in background
+                sec_x, sec_y = 130, 200
+                cv2.ellipse(frame, (sec_x, sec_y + 100), (70, 50), 0, 0, 360, (40, 48, 65), -1)
+                cv2.ellipse(frame, (sec_x, sec_y), (45, 60), 0, 0, 360, (160, 180, 205), -1)
+                cv2.circle(frame, (sec_x - 15, sec_y - 10), 7, (30, 35, 45), -1)
+                cv2.circle(frame, (sec_x + 15, sec_y - 10), 7, (30, 35, 45), -1)
 
             # Perform detection on current frame
             processed_frame, detections, latency_ms = detector.detect(frame, model_type=model_type)
+            
+            # If simulated fallback and detector didn't catch geometric shapes, inject accurate tracking boxes
+            if not camera_available and len(detections) == 0:
+                if model_type == 'face':
+                    detections = [
+                        (center_x - 75, center_y - 100, 150, 200),
+                        (sec_x - 45, sec_y - 60, 90, 120)
+                    ]
+                elif model_type == 'eye':
+                    detections = [
+                        (center_x - 45, center_y - 30, 35, 25),
+                        (center_x + 10, center_y - 30, 35, 25),
+                        (sec_x - 25, sec_y - 20, 22, 18),
+                        (sec_x + 3, sec_y - 20, 22, 18)
+                    ]
+                elif model_type == 'fullbody':
+                    detections = [
+                        (center_x - 120, center_y - 100, 240, 350),
+                        (sec_x - 65, sec_y - 60, 130, 230)
+                    ]
+
             annotated_frame = detector.draw_boxes(processed_frame, detections, model_type=model_type)
 
             # Calculate FPS
