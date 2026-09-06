@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dropzone = document.getElementById('dropzone');
   const previewWrapper = document.getElementById('preview-wrapper');
   const sourcePreview = document.getElementById('source-preview');
+  const confidenceSlider = document.getElementById('confidence-slider');
+  const confidenceVal = document.getElementById('confidence-val');
   const submitBtn = document.getElementById('submit-btn');
   const btnText = document.getElementById('btn-text');
   const btnSpinner = document.getElementById('btn-spinner');
@@ -14,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultImage = document.getElementById('result-image');
   const latencyBadge = document.getElementById('latency-badge');
   const countBadge = document.getElementById('detection-count-badge');
-  const modelTagBadge = document.getElementById('model-tag-badge');
+  const confBadge = document.getElementById('conf-badge');
   const inspectBtn = document.getElementById('inspect-btn');
   const boxesTbody = document.getElementById('boxes-tbody');
 
@@ -30,6 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
         alertContainer.firstElementChild.remove();
       }
     }, 6000);
+  }
+
+  // Confidence Slider event
+  if (confidenceSlider && confidenceVal) {
+    confidenceSlider.addEventListener('input', () => {
+      confidenceVal.textContent = `${Math.round(confidenceSlider.value * 100)}%`;
+    });
   }
 
   // Handle Drag & Drop styling
@@ -63,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleFileSelection(file) {
     if (!file) return;
 
-    // Check size < 16MB
     if (file.size > 16 * 1024 * 1024) {
       showAlert('File size exceeds the 16MB limit. Please upload a smaller image.');
       imageInput.value = '';
@@ -90,9 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formData = new FormData(form);
 
-    // Set loading state
     submitBtn.disabled = true;
-    btnText.textContent = 'Processing Image...';
+    btnText.textContent = 'Running YOLOv8 Inference...';
     btnSpinner.classList.remove('hidden');
 
     try {
@@ -107,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(data.error || `HTTP Error ${response.status}`);
       }
 
-      // Populate detection results
       noResultPlaceholder.classList.add('hidden');
       resultContent.classList.remove('hidden');
 
@@ -115,45 +121,46 @@ document.addEventListener('DOMContentLoaded', () => {
       latencyBadge.textContent = `⚡ ${data.processing_time_ms} ms`;
       latencyBadge.classList.remove('hidden');
 
-      countBadge.textContent = `${data.count} ${data.stats.total_detections === 1 ? 'Object' : 'Objects'} Detected`;
-      modelTagBadge.textContent = data.model_name || data.model_used;
+      countBadge.textContent = `${data.total_count} ${data.total_count === 1 ? 'Object' : 'Objects'} Detected`;
+      confBadge.textContent = `Conf: ${Math.round(data.confidence_used * 100)}%`;
 
       inspectBtn.href = data.result_page_url;
 
       // Render coordinates table
       boxesTbody.innerHTML = '';
-      if (data.stats.coordinates && data.stats.coordinates.length > 0) {
-        data.stats.coordinates.forEach((box, i) => {
-          const centroid = data.stats.centroids[i] || { cx: box.x + (box.w / 2), cy: box.y + (box.h / 2) };
+      const items = data.detections || (data.stats ? data.stats.objects : []);
+
+      if (items && items.length > 0) {
+        items.forEach((obj, i) => {
           const row = document.createElement('tr');
+          const bboxStr = obj.bbox ? `[${obj.bbox.join(', ')}]` : '-';
+          const confPct = Math.round(obj.confidence * 100);
           row.innerHTML = `
             <td><strong>#${i + 1}</strong></td>
-            <td>${box.x}</td>
-            <td>${box.y}</td>
-            <td>${box.w} px</td>
-            <td>${box.h} px</td>
-            <td>(${centroid.cx}, ${centroid.cy})</td>
+            <td><span class="badge badge-success" style="font-size: 0.8rem; text-transform: uppercase;">${obj.class}</span></td>
+            <td><code>${confPct}%</code></td>
+            <td><code>${bboxStr}</code></td>
           `;
           boxesTbody.appendChild(row);
         });
       } else {
         boxesTbody.innerHTML = `
           <tr>
-            <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 16px;">
-              No matching objects found with selected model.
+            <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 16px;">
+              No objects detected above the confidence threshold. Try lowering the threshold slider.
             </td>
           </tr>
         `;
       }
 
-      showAlert('Detection executed successfully!', 'success');
+      showAlert('YOLOv8 Detection completed successfully!', 'success');
 
     } catch (err) {
       console.error(err);
       showAlert(err.message || 'An error occurred while communicating with the server.');
     } finally {
       submitBtn.disabled = false;
-      btnText.textContent = 'Run Detection Engine';
+      btnText.textContent = 'Run YOLOv8 Detection Engine';
       btnSpinner.classList.add('hidden');
     }
   });

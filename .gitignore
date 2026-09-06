@@ -8,3 +8,5 @@ static/uploads/*
 !static/uploads/.gitkeep
 detections.db
 *.db
+*.pt
+models/*.pt

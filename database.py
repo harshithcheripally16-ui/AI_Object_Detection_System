@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from datetime import datetime
+from collections import Counter
 from config import DB_PATH
 
 def get_db_connection():
@@ -10,56 +10,67 @@ def get_db_connection():
     return conn
 
 def init_db():
-    """Initializes the database schema and indexes."""
+    """Initializes the database schema for YOLOv8 multi-class detection records."""
     with get_db_connection() as conn:
         c = conn.cursor()
+        
+        # Check if table exists with old schema, recreate if columns differ
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='detections'")
+        table_exists = c.fetchone()
+        
+        if table_exists:
+            c.execute("PRAGMA table_info(detections)")
+            cols = [col["name"] for col in c.fetchall()]
+            if 'confidence_threshold' not in cols or 'detections_json' not in cols:
+                c.execute("DROP TABLE detections")
+
         c.execute('''
             CREATE TABLE IF NOT EXISTS detections (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT NOT NULL,
                 result_filename TEXT NOT NULL,
-                model_used TEXT NOT NULL,
-                count INTEGER NOT NULL,
+                confidence_threshold REAL NOT NULL,
+                total_count INTEGER NOT NULL,
                 processing_time_ms REAL NOT NULL,
-                coordinates_json TEXT NOT NULL,
+                detections_json TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         c.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON detections(timestamp)')
-        c.execute('CREATE INDEX IF NOT EXISTS idx_model ON detections(model_used)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_count ON detections(total_count)')
         conn.commit()
 
-def log_detection(filename, result_filename, model_used, count, processing_time_ms, coordinates_data):
+def log_detection(filename, result_filename, confidence_threshold, total_count, processing_time_ms, detections_data):
     """
-    Logs a detection run into SQLite.
+    Logs a YOLOv8 detection run into SQLite.
     
     Args:
         filename (str): Uploaded original filename
         result_filename (str): Output annotated image filename
-        model_used (str): Name or key of the model used
-        count (int): Number of detected objects
-        processing_time_ms (float): Execution time in milliseconds
-        coordinates_data (list or dict): Coordinates metadata to serialize as JSON
+        confidence_threshold (float): Confidence cutoff used
+        total_count (int): Number of detected objects
+        processing_time_ms (float): Inference execution time in ms
+        detections_data (list or dict): Per-object detections JSON data
         
     Returns:
         int: Inserted row ID
     """
-    coords_json = json.dumps(coordinates_data) if not isinstance(coordinates_data, str) else coordinates_data
+    det_json = json.dumps(detections_data) if not isinstance(detections_data, str) else detections_data
     with get_db_connection() as conn:
         c = conn.cursor()
         c.execute('''
-            INSERT INTO detections (filename, result_filename, model_used, count, processing_time_ms, coordinates_json, timestamp)
+            INSERT INTO detections (filename, result_filename, confidence_threshold, total_count, processing_time_ms, detections_json, timestamp)
             VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
-        ''', (filename, result_filename, model_used, count, processing_time_ms, coords_json))
+        ''', (filename, result_filename, confidence_threshold, total_count, processing_time_ms, det_json))
         conn.commit()
         return c.lastrowid
 
 def get_all_detections(limit=100, offset=0):
-    """Fetches list of detection records ordered by timestamp descending."""
+    """Fetches list of detection records ordered by ID descending."""
     with get_db_connection() as conn:
         c = conn.cursor()
         c.execute('''
-            SELECT id, filename, result_filename, model_used, count, processing_time_ms, coordinates_json, timestamp
+            SELECT id, filename, result_filename, confidence_threshold, total_count, processing_time_ms, detections_json, timestamp
             FROM detections
             ORDER BY id DESC
             LIMIT ? OFFSET ?
@@ -71,10 +82,10 @@ def get_all_detections(limit=100, offset=0):
                 "id": r["id"],
                 "filename": r["filename"],
                 "result_filename": r["result_filename"],
-                "model_used": r["model_used"],
-                "count": r["count"],
+                "confidence_threshold": r["confidence_threshold"],
+                "total_count": r["total_count"],
                 "processing_time_ms": r["processing_time_ms"],
-                "coordinates": json.loads(r["coordinates_json"]) if r["coordinates_json"] else [],
+                "detections": json.loads(r["detections_json"]) if r["detections_json"] else [],
                 "timestamp": r["timestamp"]
             })
         return results
@@ -91,10 +102,10 @@ def get_detection_by_id(record_id):
             "id": row["id"],
             "filename": row["filename"],
             "result_filename": row["result_filename"],
-            "model_used": row["model_used"],
-            "count": row["count"],
+            "confidence_threshold": row["confidence_threshold"],
+            "total_count": row["total_count"],
             "processing_time_ms": row["processing_time_ms"],
-            "coordinates": json.loads(row["coordinates_json"]) if row["coordinates_json"] else [],
+            "detections": json.loads(row["detections_json"]) if row["detections_json"] else [],
             "timestamp": row["timestamp"]
         }
 
@@ -113,11 +124,11 @@ def delete_detection(record_id):
 
 def get_analytics_summary():
     """
-    Aggregates metrics across all historical detection runs.
+    Aggregates metrics across all historical YOLOv8 detection runs.
     
     Returns:
-        dict with total_images, total_detections, avg_detections, avg_latency_ms,
-        model_distribution, and recent_activity.
+        dict: total_images, total_objects, avg_processing_time_ms, top_class,
+              class_distribution, and timeline.
     """
     with get_db_connection() as conn:
         c = conn.cursor()
@@ -126,47 +137,58 @@ def get_analytics_summary():
         c.execute('''
             SELECT 
                 COUNT(*) as total_images,
-                COALESCE(SUM(count), 0) as total_detections,
-                COALESCE(AVG(count), 0) as avg_detections,
+                COALESCE(SUM(total_count), 0) as total_objects,
+                COALESCE(AVG(total_count), 0) as avg_objects_per_image,
                 COALESCE(AVG(processing_time_ms), 0) as avg_latency_ms
             FROM detections
         ''')
         overview = c.fetchone()
-        
-        # Model breakdown
-        c.execute('''
-            SELECT model_used, COUNT(*) as usage_count, COALESCE(SUM(count), 0) as detections_count
-            FROM detections
-            GROUP BY model_used
-        ''')
-        model_stats = [
-            {"model": row["model_used"], "runs": row["usage_count"], "detections": row["detections_count"]}
-            for row in c.fetchall()
+
+        # Fetch detections_json for class distribution aggregation
+        c.execute('SELECT detections_json FROM detections')
+        all_json_rows = c.fetchall()
+
+        class_counter = Counter()
+        for r in all_json_rows:
+            if r["detections_json"]:
+                try:
+                    items = json.loads(r["detections_json"])
+                    for item in items:
+                        cls_name = item.get("class", "unknown")
+                        class_counter[cls_name] += 1
+                except Exception:
+                    pass
+
+        top_classes = [
+            {"class": cls_name, "count": count}
+            for cls_name, count in class_counter.most_common(10)
         ]
-        
-        # Recent timeline data (last 10 detections for charts)
+        most_detected_class = top_classes[0]["class"].capitalize() if top_classes else "None"
+
+        # Recent timeline data (last 20 detections for line chart)
         c.execute('''
-            SELECT id, timestamp, count, processing_time_ms, model_used
+            SELECT id, timestamp, total_count, processing_time_ms, confidence_threshold
             FROM detections
             ORDER BY id ASC
-            LIMIT 30
+            LIMIT 20
         ''')
         timeline = [
             {
                 "id": row["id"],
                 "timestamp": row["timestamp"],
-                "count": row["count"],
+                "total_count": row["total_count"],
                 "latency_ms": row["processing_time_ms"],
-                "model": row["model_used"]
+                "confidence": row["confidence_threshold"]
             }
             for row in c.fetchall()
         ]
 
         return {
             "total_images": overview["total_images"] if overview else 0,
-            "total_detections": overview["total_detections"] if overview else 0,
-            "avg_detections": round(overview["avg_detections"], 2) if overview else 0.0,
-            "avg_latency_ms": round(overview["avg_latency_ms"], 2) if overview else 0.0,
-            "models_breakdown": model_stats,
+            "total_objects": overview["total_objects"] if overview else 0,
+            "avg_objects_per_image": round(overview["avg_objects_per_image"], 2) if overview else 0.0,
+            "avg_processing_time_ms": round(overview["avg_latency_ms"], 2) if overview else 0.0,
+            "top_class": most_detected_class,
+            "class_distribution": top_classes,
             "timeline": timeline
         }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real-Time Object Detection System | OpenCV & Flask</title>
+  <title>Real-Time Object Detection System | YOLOv8 Multi-Class</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,10 +15,10 @@
     <nav class="navbar">
       <a href="/" class="nav-brand">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h5"/></svg>
-        <span>VisionTrack AI</span>
+        <span>VisionTrack AI <small style="font-size: 0.65rem; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">YOLOv8</small></span>
       </a>
       <div class="nav-links">
-        <a href="/" class="nav-link active">Detector</a>
+        <a href="/" class="nav-link active">Upload & Detect</a>
         <a href="/live" class="nav-link">Live Webcam Stream</a>
         <a href="/analytics" class="nav-link">Analytics Dashboard</a>
       </div>
@@ -26,8 +26,8 @@
 
     <!-- Hero Header -->
     <div class="hero">
-      <h1>Real-Time Object Detection System</h1>
-      <p>High-performance computer vision engine powered by OpenCV Haar Cascades, Flask RESTful API, SQLite analytics logging, and interactive bounding-box telemetry.</p>
+      <h1>YOLOv8 Multi-Class Object Detection</h1>
+      <p>High-speed deep learning object detection across 80+ COCO categories (phone, person, chair, car, dog, bottle, etc.) with configurable confidence thresholds and real-time telemetry.</p>
     </div>
 
     <!-- Alert Container -->
@@ -39,20 +39,22 @@
       <div class="card">
         <div class="card-title">
           <span>Inference Settings</span>
-          <span class="badge badge-info">v2.1 Ready</span>
+          <span class="badge badge-info">80+ Classes</span>
         </div>
 
         <form id="detect-form" enctype="multipart/form-data">
-          <!-- Model Selection Dropdown -->
+          <!-- Confidence Slider -->
           <div class="form-group">
-            <label class="form-label" for="model-select">Detection Model / Target Feature</label>
-            <select id="model-select" name="model" class="select-model">
-              {% for key, val in models.items() %}
-                <option value="{{ key }}" {% if key == default_model %}selected{% endif %}>
-                  {{ val.name }} ({{ val.label }})
-                </option>
-              {% endfor %}
-            </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="form-label" style="margin-bottom: 0;" for="confidence-slider">Confidence Threshold</label>
+              <span id="confidence-val" class="badge badge-info" style="font-size: 0.85rem;">{{ (default_confidence * 100)|int }}%</span>
+            </div>
+            <input type="range" id="confidence-slider" name="confidence" min="0.1" max="0.9" step="0.05" value="{{ default_confidence }}" style="width: 100%; cursor: pointer; accent-color: var(--accent-primary);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+              <span>10% (More detections)</span>
+              <span>50% (Balanced)</span>
+              <span>90% (Strict)</span>
+            </div>
           </div>
 
           <!-- Drag and Drop Zone -->
@@ -77,7 +79,7 @@
           </div>
 
           <button type="submit" id="submit-btn" class="btn btn-primary btn-block">
-            <span id="btn-text">Run Detection Engine</span>
+            <span id="btn-text">Run YOLOv8 Detection Engine</span>
             <span id="btn-spinner" class="spinner hidden"></span>
           </button>
         </form>
@@ -86,42 +88,40 @@
       <!-- Detection Results Card -->
       <div class="card">
         <div class="card-title">
-          <span>Live Results & Telemetry</span>
+          <span>Detection Results & Telemetry</span>
           <span id="latency-badge" class="badge badge-amber hidden">⚡ 0 ms</span>
         </div>
 
         <div id="no-result-placeholder" style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <p>Upload an image and run the detection engine to view real-time detections and coordinate telemetry.</p>
+          <p>Upload an image and run the YOLOv8 engine to view multi-class predictions, confidence scores, and bounding box coordinates.</p>
         </div>
 
         <div id="result-content" class="hidden">
           <div class="preview-container">
-            <img id="result-image" class="preview-img" alt="Annotated Result">
+            <img id="result-image" class="preview-img" alt="YOLOv8 Annotated Result">
           </div>
 
           <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center;">
             <div>
               <span id="detection-count-badge" class="badge badge-success">0 Objects Detected</span>
-              <span id="model-tag-badge" class="badge badge-info" style="margin-left: 6px;">Face</span>
+              <span id="conf-badge" class="badge badge-info" style="margin-left: 6px;">Conf: 50%</span>
             </div>
             <a id="inspect-btn" href="#" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
-              Inspect Full Telemetry &rarr;
+              Inspect Details &rarr;
             </a>
           </div>
 
           <div style="margin-top: 20px;">
-            <label class="form-label">Detected Bounding Boxes</label>
+            <label class="form-label">Detected Objects Breakdown</label>
             <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
               <table class="custom-table" id="boxes-table">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>X</th>
-                    <th>Y</th>
-                    <th>Width</th>
-                    <th>Height</th>
-                    <th>Center (cx, cy)</th>
+                    <th>Class</th>
+                    <th>Confidence</th>
+                    <th>Bounding Box [x1, y1, x2, y2]</th>
                   </tr>
                 </thead>
                 <tbody id="boxes-tbody">

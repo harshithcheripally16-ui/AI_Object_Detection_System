@@ -1,69 +1,53 @@
-import os
 import pytest
 import numpy as np
-import cv2
-
 from detector import ObjectDetector
-from config import MODELS
+from config import YOLO_MODEL_PATH
 
 @pytest.fixture
 def detector():
-    return ObjectDetector(MODELS)
+    return ObjectDetector(YOLO_MODEL_PATH)
 
 @pytest.fixture
 def sample_image():
     """Generates a synthetic 300x300 BGR test image."""
-    img = np.zeros((300, 300, 3), dtype=np.uint8)
-    cv2.circle(img, (150, 150), 50, (255, 255, 255), -1)
-    return img
+    return np.zeros((300, 300, 3), dtype=np.uint8)
 
-def test_detector_initialization(detector):
-    """Test that all models are properly loaded into the detector."""
-    assert 'face' in detector.classifiers
-    assert 'eye' in detector.classifiers
-    assert 'fullbody' in detector.classifiers
-    for model_name, classifier in detector.classifiers.items():
-        assert not classifier.empty(), f"Model {model_name} classifier failed to load."
+def test_detector_loads_model(detector):
+    """Test YOLO model initializes without error."""
+    assert detector.model is not None
+    assert hasattr(detector.model, 'predict')
 
-def test_detect_models(detector, sample_image):
-    """Test detection across all supported model types."""
-    for model_type in ['face', 'eye', 'fullbody']:
-        img, detections, ms = detector.detect(sample_image, model_type=model_type)
-        assert isinstance(img, np.ndarray)
-        assert isinstance(ms, (int, float))
-        assert ms >= 0
-        assert isinstance(detections, (list, np.ndarray))
+def test_detect_returns_results(detector, sample_image):
+    """Test valid image returns results and processing time in ms."""
+    results, ms = detector.detect(sample_image, confidence=0.5)
+    assert results is not None
+    assert isinstance(ms, (int, float))
+    assert ms >= 0
 
-def test_draw_boxes(detector, sample_image):
-    """Test that bounding box rendering preserves dimensions and format."""
-    mock_detections = [(50, 50, 60, 60)]
-    annotated = detector.draw_boxes(sample_image, mock_detections, model_type='face')
-    assert annotated.shape == sample_image.shape
+def test_detect_blank_image(detector, sample_image):
+    """Test blank image returns 0 detections."""
+    results, ms = detector.detect(sample_image, confidence=0.5)
+    stats = detector.get_stats(results)
+    assert stats["total"] == 0
+    assert stats["objects"] == []
+
+def test_get_stats_structure(detector, sample_image):
+    """Test stats dict has 'total' and 'objects' keys."""
+    results, _ = detector.detect(sample_image, confidence=0.5)
+    stats = detector.get_stats(results)
+    assert "total" in stats
+    assert "objects" in stats
+    assert isinstance(stats["objects"], list)
+
+def test_confidence_threshold(detector, sample_image):
+    """Test high confidence threshold (0.95) runs without errors."""
+    results_high, _ = detector.detect(sample_image, confidence=0.95)
+    stats_high = detector.get_stats(results_high)
+    assert stats_high["total"] == 0
+
+def test_draw_boxes_returns_array(detector, sample_image):
+    """Test draw_boxes returns numpy array matching image dimensions."""
+    results, _ = detector.detect(sample_image, confidence=0.5)
+    annotated = detector.draw_boxes(results)
     assert isinstance(annotated, np.ndarray)
-
-def test_get_stats_empty(detector):
-    """Test metrics extraction when no detections are found."""
-    stats = detector.get_stats([], img_shape=(300, 300, 3))
-    assert stats["total_detections"] == 0
-    assert stats["coordinates"] == []
-    assert stats["centroids"] == []
-    assert stats["coverage_percentage"] == 0.0
-
-def test_get_stats_with_detections(detector):
-    """Test metrics extraction with valid detections."""
-    mock_detections = [(10, 20, 30, 40)]
-    stats = detector.get_stats(mock_detections, img_shape=(200, 200, 3))
-    assert stats["total_detections"] == 1
-    assert stats["coordinates"] == [{"x": 10, "y": 20, "w": 30, "h": 40}]
-    assert stats["centroids"] == [{"cx": 25, "cy": 40}]
-    assert stats["coverage_percentage"] == round((30 * 40) / (200 * 200) * 100, 2)
-
-def test_invalid_model_type(detector, sample_image):
-    """Test error raising when requesting an unsupported model."""
-    with pytest.raises(ValueError):
-        detector.detect(sample_image, model_type='non_existent_model')
-
-def test_invalid_image_path(detector):
-    """Test error raising when image path is invalid."""
-    with pytest.raises(FileNotFoundError):
-        detector.detect("non_existent_path_12345.jpg")
+    assert annotated.shape == sample_image.shape

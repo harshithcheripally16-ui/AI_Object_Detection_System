@@ -1,4 +1,4 @@
 flask>=3.0.0
-# opencv-python is used for local workstations/display; use opencv-python-headless for headless cloud/container deployments
+ultralytics>=8.0.0
 opencv-python>=4.8.0
 numpy>=1.26.0

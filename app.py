@@ -10,8 +10,8 @@ from config import (
     UPLOAD_FOLDER,
     ALLOWED_EXTENSIONS,
     MAX_CONTENT_LENGTH,
-    MODELS,
-    DEFAULT_MODEL
+    YOLO_MODEL_PATH,
+    DEFAULT_CONFIDENCE
 )
 from detector import ObjectDetector
 from database import (
@@ -30,7 +30,7 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 # Initialize detector and database
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 init_db()
-detector = ObjectDetector(MODELS)
+detector = ObjectDetector(YOLO_MODEL_PATH)
 
 def is_allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -39,17 +39,17 @@ def is_allowed_file(filename):
 
 @app.route('/')
 def index():
-    """Renders the main detection dashboard."""
-    return render_template('index.html', models=MODELS, default_model=DEFAULT_MODEL)
+    """Renders the main multi-class detection upload dashboard."""
+    return render_template('index.html', default_confidence=DEFAULT_CONFIDENCE)
 
 @app.route('/live')
 def live_view():
-    """Renders real-time live webcam object detection dashboard."""
-    return render_template('live.html', models=MODELS, default_model=DEFAULT_MODEL)
+    """Renders real-time live webcam YOLOv8 object detection dashboard."""
+    return render_template('live.html', default_confidence=DEFAULT_CONFIDENCE)
 
 @app.route('/result/<int:record_id>')
 def result_view(record_id):
-    """Renders detailed side-by-side result inspector for a specific detection run."""
+    """Renders detailed side-by-side result inspector for a specific YOLOv8 run."""
     record = get_detection_by_id(record_id)
     if not record:
         return render_template('result.html', error="Detection record not found."), 404
@@ -57,24 +57,19 @@ def result_view(record_id):
 
 @app.route('/analytics')
 def analytics_view():
-    """Renders analytics dashboard page."""
+    """Renders analytics dashboard page with class distribution & latency charts."""
     summary = get_analytics_summary()
     history = get_all_detections(limit=50)
     return render_template('analytics.html', summary=summary, history=history)
 
 # ----------------- MJPEG Live Video Feed -----------------
 
-def generate_mjpeg_frames(model_type=DEFAULT_MODEL):
+def generate_mjpeg_frames(confidence=DEFAULT_CONFIDENCE):
     """
-    Generator yielding multipart MJPEG frames from OpenCV VideoCapture
-    with real-time Haar cascade inference and latency telemetry.
-    Includes graceful simulated feed fallback if camera hardware is unavailable.
+    Generator yielding multipart MJPEG frames with real-time YOLOv8 multi-class inference.
+    Includes simulated fallback feed when no physical camera is accessible.
     """
-    if model_type not in MODELS:
-        model_type = DEFAULT_MODEL
-
     cap = cv2.VideoCapture(0)
-    # Set standard resolution & buffer
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -91,77 +86,45 @@ def generate_mjpeg_frames(model_type=DEFAULT_MODEL):
                     camera_available = False
                     continue
             else:
-                # High-fidelity simulated feed when physical webcam is unavailable
                 sim_tick += 1
-                frame = np.full((480, 640, 3), 18, dtype=np.uint8)
-                
-                # Dynamic futuristic grid
+                frame = np.full((480, 640, 3), 20, dtype=np.uint8)
+                # Futuristic tech background
                 for x in range(0, 640, 40):
-                    cv2.line(frame, (x, 0), (x, 480), (28, 28, 35), 1)
+                    cv2.line(frame, (x, 0), (x, 480), (30, 30, 38), 1)
                 for y in range(0, 480, 40):
-                    cv2.line(frame, (0, y), (640, y), (28, 28, 35), 1)
+                    cv2.line(frame, (0, y), (640, y), (30, 30, 38), 1)
 
-                # Primary target subject
+                # Simulated person + laptop object
                 center_x = int(320 + 80 * np.sin(sim_tick * 0.04))
                 center_y = int(240 + 40 * np.cos(sim_tick * 0.04))
 
-                # Head & Shoulders silhouette
-                cv2.ellipse(frame, (center_x, center_y + 160), (130, 90), 0, 0, 360, (50, 60, 80), -1)
-                cv2.ellipse(frame, (center_x, center_y), (75, 100), 0, 0, 360, (185, 205, 230), -1)
-                
-                # Eyes
-                cv2.circle(frame, (center_x - 28, center_y - 18), 12, (30, 35, 45), -1)
-                cv2.circle(frame, (center_x + 28, center_y - 18), 12, (30, 35, 45), -1)
-                cv2.circle(frame, (center_x - 28, center_y - 18), 4, (240, 245, 255), -1)
-                cv2.circle(frame, (center_x + 28, center_y - 18), 4, (240, 245, 255), -1)
-                
-                # Nose & Mouth
-                cv2.line(frame, (center_x, center_y - 5), (center_x, center_y + 20), (100, 115, 135), 2)
-                cv2.ellipse(frame, (center_x, center_y + 45), (28, 12), 0, 0, 180, (70, 80, 140), -1)
+                # Person
+                cv2.ellipse(frame, (center_x, center_y + 150), (120, 80), 0, 0, 360, (50, 60, 80), -1)
+                cv2.ellipse(frame, (center_x, center_y), (70, 90), 0, 0, 360, (185, 205, 230), -1)
+                cv2.circle(frame, (center_x - 25, center_y - 15), 10, (30, 35, 45), -1)
+                cv2.circle(frame, (center_x + 25, center_y - 15), 10, (30, 35, 45), -1)
 
-                # Secondary person in background
-                sec_x, sec_y = 130, 200
-                cv2.ellipse(frame, (sec_x, sec_y + 100), (70, 50), 0, 0, 360, (40, 48, 65), -1)
-                cv2.ellipse(frame, (sec_x, sec_y), (45, 60), 0, 0, 360, (160, 180, 205), -1)
-                cv2.circle(frame, (sec_x - 15, sec_y - 10), 7, (30, 35, 45), -1)
-                cv2.circle(frame, (sec_x + 15, sec_y - 10), 7, (30, 35, 45), -1)
+                # Laptop on desk
+                lap_x, lap_y = center_x + 80, center_y + 90
+                cv2.rectangle(frame, (lap_x - 50, lap_y - 35), (lap_x + 50, lap_y + 15), (70, 80, 95), -1)
+                cv2.rectangle(frame, (lap_x - 60, lap_y + 15), (lap_x + 60, lap_y + 25), (120, 130, 145), -1)
 
-            # Perform detection on current frame
-            processed_frame, detections, latency_ms = detector.detect(frame, model_type=model_type)
-            
-            # If simulated fallback and detector didn't catch geometric shapes, inject accurate tracking boxes
-            if not camera_available and len(detections) == 0:
-                if model_type == 'face':
-                    detections = [
-                        (center_x - 75, center_y - 100, 150, 200),
-                        (sec_x - 45, sec_y - 60, 90, 120)
-                    ]
-                elif model_type == 'eye':
-                    detections = [
-                        (center_x - 45, center_y - 30, 35, 25),
-                        (center_x + 10, center_y - 30, 35, 25),
-                        (sec_x - 25, sec_y - 20, 22, 18),
-                        (sec_x + 3, sec_y - 20, 22, 18)
-                    ]
-                elif model_type == 'fullbody':
-                    detections = [
-                        (center_x - 120, center_y - 100, 240, 350),
-                        (sec_x - 65, sec_y - 60, 130, 230)
-                    ]
-
-            annotated_frame = detector.draw_boxes(processed_frame, detections, model_type=model_type)
+            # Run YOLOv8 inference
+            results, latency_ms = detector.detect(frame, confidence=confidence)
+            annotated_frame = detector.draw_boxes(results)
+            stats = detector.get_stats(results)
 
             # Calculate FPS
             curr_frame_time = time.perf_counter()
             fps = 1.0 / (curr_frame_time - prev_frame_time) if (curr_frame_time - prev_frame_time) > 0 else 30.0
             prev_frame_time = curr_frame_time
 
-            # Overlay real-time HUD telemetry
-            hud_bg_color = (15, 23, 42)
-            cv2.rectangle(annotated_frame, (0, 0), (640, 38), hud_bg_color, -1)
+            # Top HUD bar
+            hud_bg = (15, 23, 42)
+            cv2.rectangle(annotated_frame, (0, 0), (640, 38), hud_bg, -1)
             cv2.line(annotated_frame, (0, 38), (640, 38), (56, 189, 248), 1)
 
-            hud_text = f"FPS: {fps:.1f} | Model: {model_type.upper()} | Found: {len(detections)} | Latency: {latency_ms:.1f}ms"
+            hud_text = f"YOLOv8n | FPS: {fps:.1f} | Conf: {int(confidence * 100)}% | Objects: {stats['total']} | {latency_ms:.1f}ms"
             cv2.putText(
                 annotated_frame,
                 hud_text,
@@ -182,7 +145,6 @@ def generate_mjpeg_frames(model_type=DEFAULT_MODEL):
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-            # Moderate streaming loop rate
             time.sleep(0.03)
 
     finally:
@@ -192,14 +154,17 @@ def generate_mjpeg_frames(model_type=DEFAULT_MODEL):
 @app.route('/video-feed')
 def video_feed():
     """
-    GET /video-feed?model=<face|eye|fullbody>
-    Streams live multipart MJPEG video with real-time Haar Cascade object detection.
+    GET /video-feed?conf=0.5
+    Streams live multipart MJPEG video with real-time YOLOv8 object detection.
     """
-    model_type = request.args.get('model', DEFAULT_MODEL).strip().lower()
-    if model_type not in MODELS:
-        model_type = DEFAULT_MODEL
+    try:
+        conf = float(request.args.get('conf', DEFAULT_CONFIDENCE))
+        conf = max(0.1, min(0.95, conf))
+    except (ValueError, TypeError):
+        conf = DEFAULT_CONFIDENCE
+
     return Response(
-        generate_mjpeg_frames(model_type=model_type),
+        generate_mjpeg_frames(confidence=conf),
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
 
@@ -210,8 +175,8 @@ def detect():
     """
     POST /detect
     Accepts multipart/form-data:
-      - 'image': file upload
-      - 'model': (optional) 'face', 'eye', 'fullbody' (default: 'face')
+      - 'image': file upload (PNG, JPG, JPEG, WEBP)
+      - 'confidence': (optional) float between 0.1 and 0.9 (default: 0.5)
       
     Returns JSON detection stats, latency, and annotated image path.
     """
@@ -229,12 +194,13 @@ def detect():
             "error": f"Invalid file type. Allowed extensions: {', '.join(ALLOWED_EXTENSIONS)}"
         }), 415
 
-    # 3. Validate selected model
-    model_type = request.form.get('model', DEFAULT_MODEL).strip().lower()
-    if model_type not in MODELS:
-        return jsonify({
-            "error": f"Invalid model '{model_type}'. Available: {list(MODELS.keys())}"
-        }), 400
+    # 3. Parse and validate confidence threshold
+    try:
+        conf_param = request.form.get('confidence', DEFAULT_CONFIDENCE)
+        confidence = float(conf_param)
+        confidence = max(0.05, min(0.95, confidence))
+    except (ValueError, TypeError):
+        confidence = DEFAULT_CONFIDENCE
 
     try:
         # 4. Generate unique filenames & save original
@@ -255,10 +221,10 @@ def detect():
                 os.remove(orig_filepath)
             return jsonify({"error": "Corrupted or unreadable image file."}), 400
 
-        # 6. Execute object detection & latency tracking
-        img, detections, processing_time_ms = detector.detect(img, model_type=model_type)
-        annotated_img = detector.draw_boxes(img, detections, model_type=model_type)
-        stats = detector.get_stats(detections, img.shape)
+        # 6. Execute YOLOv8 inference & latency tracking
+        results, processing_time_ms = detector.detect(img, confidence=confidence)
+        annotated_img = detector.draw_boxes(results)
+        stats = detector.get_stats(results)
 
         # 7. Save annotated result image
         cv2.imwrite(result_filepath, annotated_img)
@@ -267,22 +233,23 @@ def detect():
         record_id = log_detection(
             filename=orig_filename,
             result_filename=result_filename,
-            model_used=model_type,
-            count=stats["total_detections"],
+            confidence_threshold=confidence,
+            total_count=stats["total"],
             processing_time_ms=processing_time_ms,
-            coordinates_data=stats["coordinates"]
+            detections_data=stats["objects"]
         )
 
         # 9. Return structured response
         return jsonify({
             "id": record_id,
-            "count": stats["total_detections"],
-            "model_used": model_type,
-            "model_name": MODELS[model_type]["name"],
+            "total_count": stats["total"],
+            "count": stats["total"],
+            "confidence_used": confidence,
             "processing_time_ms": processing_time_ms,
             "original_image": f"/static/uploads/{orig_filename}",
             "result_image": f"/static/uploads/{result_filename}",
             "result_page_url": f"/result/{record_id}",
+            "detections": stats["objects"],
             "stats": stats
         }), 200
 
@@ -291,7 +258,7 @@ def detect():
 
 @app.route('/api/history', methods=['GET'])
 def api_history():
-    """Returns historical detection runs as JSON."""
+    """Returns historical YOLOv8 detection runs as JSON."""
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
     history = get_all_detections(limit=limit, offset=offset)
@@ -315,7 +282,6 @@ def api_delete_record(record_id):
     if not record:
         return jsonify({"error": f"Record #{record_id} not found."}), 404
 
-    # Remove files if present
     for fname in [record.get("filename"), record.get("result_filename")]:
         if fname:
             fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
@@ -350,13 +316,13 @@ def request_entity_too_large(error):
 def not_found(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Endpoint or resource not found."}), 404
-    return render_template('index.html', error="Page not found.", models=MODELS), 404
+    return render_template('index.html', error="Page not found.", default_confidence=DEFAULT_CONFIDENCE), 404
 
 @app.errorhandler(500)
 def server_error(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Internal server error."}), 500
-    return render_template('index.html', error="An internal error occurred.", models=MODELS), 500
+    return render_template('index.html', error="An internal error occurred.", default_confidence=DEFAULT_CONFIDENCE), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

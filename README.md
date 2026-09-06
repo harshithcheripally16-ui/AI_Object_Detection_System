@@ -1,57 +1,56 @@
-# Real-Time Object Detection & Analytics System
+# Real-Time Object Detection & Analytics System (YOLOv8 Multi-Class Edition)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
+[![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-orange.svg)](https://github.com/ultralytics/ultralytics)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-red.svg)](https://opencv.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-3-lightgrey.svg)](https://sqlite.org/)
 [![Pytest](https://img.shields.io/badge/pytest-Passing-brightgreen.svg)](https://pytest.org/)
 
-A production-grade, modular computer vision web application and RESTful API built with **Python, OpenCV, Flask, SQLite, and modern JavaScript/CSS3**.
+A production-grade, modular computer vision web application and RESTful API built with **Python, YOLOv8 (Ultralytics, `yolov8n.pt`), Flask, SQLite, and modern JavaScript/CSS3**.
 
-The system performs multi-model object and feature detection (Frontal Face, Eye, and Full Body), tracks real-time inference latency metrics (`processing_time_ms`), persists spatial bounding box telemetry into SQLite, and provides an interactive analytics dashboard with full CRUD operations.
+The system performs multi-class object detection across **80+ everyday categories** (phone, chair, person, TV, mouse, bottle, dog, car, laptop, etc.), allows dynamic **confidence threshold tuning** via a frontend slider, logs per-detection spatial telemetry into SQLite with full CRUD capabilities, and features an interactive Chart.js analytics dashboard.
 
 ---
 
 ## 📸 Application Preview & Screenshots
 
-### 1. Main Detection & Upload Interface
-> Drag-and-drop file upload interface with real-time model selection dropdown (Face, Eye, Full Body) and instant bounding-box telemetry.
+### 1. Main Detection & Upload Interface (with Confidence Slider)
+> Drag-and-drop file upload interface with real-time confidence threshold control (10% to 90%), live image preview, and multi-class YOLOv8 bounding box predictions.
 ![Upload Dashboard](docs/screenshots/upload_dashboard.png)
 
 ---
 
 ### 2. Live Webcam Stream & Real-Time MJPEG Telemetry
-> Real-time video streaming over `multipart/x-mixed-replace` with dynamic model switching (Face, Eye, Full Body), live FPS overlay, bounding box inference, and fallback simulation.
+> High-framerate real-time video streaming over `multipart/x-mixed-replace` with on-the-fly YOLOv8 multi-class inference, live FPS overlay, confidence tuning, and simulated fallback feed.
 ![Live Webcam Stream](docs/screenshots/live_webcam_stream.png)
 
 ---
 
 ### 3. Side-by-Side Result & Coordinate Telemetry Inspector
-> High-resolution side-by-side comparison (Original Source vs Annotated Output), bounding box coordinate metrics table, centroid calculations, and raw JSON export.
+> High-resolution side-by-side comparison (Original Source vs Annotated Output), per-object detection table (class label, confidence score, bounding box `[x1, y1, x2, y2]`), and raw JSON export.
 ![Detection Results](docs/screenshots/detection_results.png)
 
 ---
 
 ### 4. Analytics & Performance Dashboard
-> Real-time system telemetry with KPI summary cards, inference latency trends over time, model distribution charts, and interactive SQLite history table with CRUD deletion.
+> Real-time system telemetry with KPI summary cards, Top 10 detected object classes bar chart, inference latency & count trends over time, and interactive SQLite history table with CRUD deletion.
 ![Analytics Dashboard](docs/screenshots/analytics_dashboard.png)
 
 ---
 
 ## 🌟 Key Features
 
-- **Multi-Model Haar Cascade Architecture**: Easily configure and switch between multiple detection models:
-  - `haarcascade_frontalface_default.xml` (Face detection)
-  - `haarcascade_eye.xml` (Eye detection)
-  - `haarcascade_fullbody.xml` (Full body person detection)
-- **High-Performance Latency Telemetry**: Every inference run tracks precision latency in milliseconds (`processing_time_ms`), providing benchmarked performance data.
+- **80+ Category Multi-Class Detection**: Powered by Ultralytics YOLOv8 (`yolov8n.pt`) pre-trained on the MS COCO dataset (person, car, dog, bottle, chair, tv, phone, laptop, etc.).
+- **Confidence Threshold Control**: Frontend interactive slider allows dynamic confidence filtering from 10% to 90% (default: 50%).
+- **High-Performance Latency Telemetry**: Every inference run tracks precision inference execution time in milliseconds (`processing_time_ms`).
 - **Strict Input Validation & Security**:
   - File extension verification against whitelist (`PNG`, `JPG`, `JPEG`, `WEBP`)
   - 16MB file payload limit (`MAX_CONTENT_LENGTH`)
-  - Image decode integrity checks (`cv2.imdecode` / OpenCV decode validation)
+  - Image decode integrity checks (`cv2.imread` / OpenCV validation)
   - Standard HTTP status codes (`200`, `400`, `404`, `413`, `415`, `500`)
 - **Full CRUD RESTful API**: Complete REST endpoints including `POST /detect`, `GET /api/history`, `GET /api/history/<id>`, and `DELETE /api/history/<id>`.
-- **Relational Data Persistence**: SQLite logging with automatic schema creation and indexed timestamp queries.
+- **Relational Data Persistence**: SQLite logging with automatic schema creation, indexing, and JSON object telemetry storage.
 - **Glassmorphic Responsive UI**: Modern dark theme built with CSS3 variables, drag-and-drop zones, and Chart.js telemetry charts.
 - **100% Automated Pytest Coverage**: Comprehensive unit tests for the detection engine and API integration tests.
 
@@ -61,13 +60,13 @@ The system performs multi-model object and feature detection (Frontal Face, Eye,
 
 > [!NOTE]
 > **OpenCV Package Choice (`opencv-python` vs `opencv-python-headless`)**:
-> - `opencv-python` is specified in `requirements.txt` for local development and desktop environments where graphical display capabilities and standard OpenCV modules are needed.
-> - For headless production environments (Docker containers, AWS/GCP servers with no GUI/display server), use `opencv-python-headless` instead to avoid missing X11/GUI library dependencies.
+> - `opencv-python` is specified in `requirements.txt` for local development and desktop environments.
+> - For headless production environments (Docker containers, AWS/GCP servers with no GUI/display server), use `opencv-python-headless` instead.
 
 > [!WARNING]
 > **WebP Image Format Compatibility**:
-> - WebP (`.webp`) format is fully supported in validation and upload handling.
-> - Please note that Haar Cascade feature detection algorithms rely heavily on edge gradients and intensity transitions; highly compressed or lossy WebP images may yield slightly variable detection confidence compared to standard uncompressed JPEG or PNG formats.
+> - WebP (`.webp`) format is supported in validation and upload handling.
+> - Please note that detection results may vary depending on lossy compression levels compared to uncompressed JPEG or PNG formats.
 
 ---
 
@@ -75,6 +74,7 @@ The system performs multi-model object and feature detection (Frontal Face, Eye,
 
 | Layer | Technology |
 |---|---|
+| **Deep Learning Model** | Ultralytics YOLOv8 Nano (`yolov8n.pt` — 6.2MB) |
 | **Backend Framework** | Flask 3.0 (Python) |
 | **Computer Vision Engine** | OpenCV (`cv2`) & NumPy |
 | **Database** | SQLite 3 (Indexed relational logging) |
@@ -89,30 +89,29 @@ The system performs multi-model object and feature detection (Frontal Face, Eye,
 ```
 AI_Object_Detection_System/
 ├── app.py                     # Flask application & REST API routes (GET, POST, DELETE)
-├── detector.py                # OOP ObjectDetector class supporting multi-model switching
-├── database.py                # SQLite database helper with full CRUD operations & analytics
-├── config.py                  # Centralized configuration constants & model parameters
-├── requirements.txt           # Production dependencies (Flask, OpenCV, NumPy)
+├── detector.py                # OOP ObjectDetector class using Ultralytics YOLOv8
+├── database.py                # SQLite module with full CRUD operations & analytics
+├── config.py                  # Centralized configuration constants & YOLO model path
+├── requirements.txt           # Production dependencies (Flask, Ultralytics, OpenCV, NumPy)
 ├── requirements-dev.txt       # Development & testing dependencies (Pytest, Requests)
-├── .gitignore                 # Excludes static/uploads, database files, and caches
+├── .gitignore                 # Excludes static/uploads, database, and weights (*.pt)
 ├── models/
-│   ├── haarcascade_frontalface_default.xml
-│   ├── haarcascade_eye.xml
-│   └── haarcascade_fullbody.xml
+│   └── yolov8n.pt             # Auto-downloaded on first run (~6MB)
 ├── static/
 │   ├── css/
-│   │   └── style.css          # Glassmorphism UI styling
+│   │   └── style.css          # Glassmorphic UI styling
 │   ├── js/
-│   │   ├── main.js            # Upload logic, AJAX detection, bounding box rendering
+│   │   ├── main.js            # Upload logic, confidence slider, bounding box rendering
 │   │   └── analytics.js       # Chart.js visualization & asynchronous CRUD actions
 │   └── uploads/               # Saved original and annotated result images
 ├── templates/
-│   ├── index.html             # Upload & real-time detection page
-│   ├── result.html            # Side-by-side inspection & coordinates inspector
+│   ├── index.html             # Upload & real-time detection page with confidence slider
+│   ├── live.html              # Real-time webcam streaming interface
+│   ├── result.html            # Side-by-side inspection & per-detection table
 │   └── analytics.html         # Performance metrics & historical CRUD table
 ├── tests/
 │   ├── __init__.py
-│   ├── test_detector.py       # Unit tests for ObjectDetector OOP engine
+│   ├── test_detector.py       # Unit tests for YOLOv8 ObjectDetector OOP engine
 │   └── test_api.py            # API endpoint integration and validation tests
 ├── docs/
 │   └── screenshots/           # Application screenshots for documentation
@@ -169,8 +168,8 @@ pytest -v tests/
 ```
 
 ### Test Suite Summary:
-- `tests/test_detector.py`: Tests model loading, multiscale inference across face/eye/fullbody, box annotations, and coordinate extraction.
-- `tests/test_api.py`: Tests `GET /`, `GET /analytics`, `POST /detect` input validation (extension, size, empty file, invalid model), and `DELETE /api/history/<id>` CRUD lifecycle.
+- `tests/test_detector.py`: Tests YOLOv8 model initialization, inference execution, blank image handling, stats structure (`total` & `objects`), confidence cutoff, and bounding box drawing.
+- `tests/test_api.py`: Tests `GET /`, `GET /analytics`, `POST /detect` input validation (empty file, invalid extension, required JSON response keys), and `DELETE /api/history/<id>` CRUD lifecycle.
 
 ---
 
@@ -182,32 +181,24 @@ pytest -v tests/
 **Request Headers**: `Content-Type: multipart/form-data`  
 **Parameters**:
 - `image` (File, Required): Image file (`.png`, `.jpg`, `.jpeg`, `.webp`, Max: 16MB)
-- `model` (String, Optional): One of `'face'`, `'eye'`, `'fullbody'` (Default: `'face'`)
+- `confidence` (Float, Optional): Confidence threshold from `0.1` to `0.9` (Default: `0.5`)
 
 **Example `200 OK` Response**:
 ```json
 {
-  "id": 12,
-  "count": 2,
-  "model_used": "face",
-  "model_name": "Frontal Face Detection",
-  "processing_time_ms": 68.45,
-  "original_image": "/static/uploads/upload_3f8b1a.jpg",
-  "result_image": "/static/uploads/result_3f8b1a.jpg",
-  "result_page_url": "/result/12",
-  "stats": {
-    "total_detections": 2,
-    "coordinates": [
-      {"x": 120, "y": 140, "w": 85, "h": 85},
-      {"x": 310, "y": 155, "w": 90, "h": 90}
-    ],
-    "centroids": [
-      {"cx": 162, "cy": 182},
-      {"cx": 355, "cy": 200}
-    ],
-    "image_dimensions": {"width": 640, "height": 480},
-    "coverage_percentage": 5.01
-  }
+  "id": 5,
+  "result_image": "/static/uploads/result_abc123.jpg",
+  "original_image": "/static/uploads/upload_abc123.jpg",
+  "total_count": 4,
+  "confidence_used": 0.5,
+  "processing_time_ms": 142.3,
+  "result_page_url": "/result/5",
+  "detections": [
+    {"class": "person", "confidence": 0.94, "bbox": [220.0, 105.0, 480.0, 390.0]},
+    {"class": "laptop", "confidence": 0.89, "bbox": [190.0, 240.0, 510.0, 410.0]},
+    {"class": "cup", "confidence": 0.82, "bbox": [90.0, 305.0, 175.0, 395.0]},
+    {"class": "cell phone", "confidence": 0.87, "bbox": [535.0, 325.0, 605.0, 425.0]}
+  ]
 }
 ```
 
@@ -227,13 +218,16 @@ pytest -v tests/
 ```json
 {
   "total_images": 45,
-  "total_detections": 118,
-  "avg_detections": 2.62,
-  "avg_latency_ms": 74.31,
-  "models_breakdown": [
-    {"model": "face", "runs": 30, "detections": 82},
-    {"model": "eye", "runs": 10, "detections": 28},
-    {"model": "fullbody", "runs": 5, "detections": 8}
+  "total_objects": 118,
+  "avg_objects_per_image": 2.62,
+  "avg_processing_time_ms": 145.31,
+  "top_class": "Person",
+  "class_distribution": [
+    {"class": "person", "count": 42},
+    {"class": "laptop", "count": 25},
+    {"class": "cell phone", "count": 18},
+    {"class": "chair", "count": 14},
+    {"class": "cup", "count": 10}
   ],
   "timeline": [ ... ]
 }

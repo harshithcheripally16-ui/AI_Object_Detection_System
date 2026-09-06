@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detection Inspection #{{ record.id if record else 'N/A' }} | VisionTrack AI</title>
+  <title>Detection Inspection #{{ record.id if record else 'N/A' }} | VisionTrack AI YOLOv8</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,10 +15,10 @@
     <nav class="navbar">
       <a href="/" class="nav-brand">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h5"/></svg>
-        <span>VisionTrack AI</span>
+        <span>VisionTrack AI <small style="font-size: 0.65rem; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">YOLOv8</small></span>
       </a>
       <div class="nav-links">
-        <a href="/" class="nav-link">Detector</a>
+        <a href="/" class="nav-link">Upload & Detect</a>
         <a href="/live" class="nav-link">Live Webcam Stream</a>
         <a href="/analytics" class="nav-link">Analytics Dashboard</a>
       </div>
@@ -30,7 +30,7 @@
         <a href="/" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem;">Back to Detector</a>
       </div>
     {% else %}
-      <!-- Breadcrumb & Header -->
+      <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <div>
           <a href="/" style="color: var(--accent-primary); text-decoration: none; font-size: 0.9rem;">&larr; Back to Upload</a>
@@ -38,7 +38,7 @@
           <span style="color: var(--text-secondary); font-size: 0.85rem;">Logged on {{ record.timestamp }}</span>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
-          <span class="badge badge-info">Model: {{ record.model_used | upper }}</span>
+          <span class="badge badge-info">Conf Threshold: {{ (record.confidence_threshold * 100)|int }}%</span>
           <span class="badge badge-amber">⚡ {{ record.processing_time_ms }} ms</span>
           <button id="delete-record-btn" data-id="{{ record.id }}" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85rem;">
             Delete Record
@@ -62,8 +62,8 @@
         <!-- Annotated Image -->
         <div class="card">
           <div class="card-title">
-            <span>Annotated Detections</span>
-            <span class="badge badge-success">{{ record.count }} Found</span>
+            <span>YOLOv8 Annotated Detections</span>
+            <span class="badge badge-success">{{ record.total_count }} Objects</span>
           </div>
           <div class="preview-container">
             <img src="{{ url_for('static', filename='uploads/' + record.result_filename) }}" class="preview-img" alt="Annotated Detections">
@@ -71,43 +71,43 @@
         </div>
       </div>
 
-      <!-- Coordinates Table & JSON Inspector -->
+      <!-- Detections Breakdown Table -->
       <div class="card" style="margin-bottom: 32px;">
         <div class="card-title">
-          <span>Spatial Bounding Box Coordinates</span>
-          <span class="badge badge-info">{{ record.coordinates | length }} Coordinates</span>
+          <span>Detected Objects & Spatial Coordinates</span>
+          <span class="badge badge-info">{{ record.detections | length }} Items</span>
         </div>
 
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Box Index</th>
-                <th>X Offset</th>
-                <th>Y Offset</th>
-                <th>Width</th>
-                <th>Height</th>
-                <th>Area ($px^2$)</th>
-                <th>Centroid ($c_x, c_y$)</th>
+                <th>#</th>
+                <th>Class Label</th>
+                <th>Confidence</th>
+                <th>Bounding Box [x1, y1, x2, y2]</th>
+                <th>Box Dimensions (W x H)</th>
               </tr>
             </thead>
             <tbody>
-              {% if record.coordinates and record.coordinates | length > 0 %}
-                {% for box in record.coordinates %}
+              {% if record.detections and record.detections | length > 0 %}
+                {% for obj in record.detections %}
                   <tr>
                     <td><strong>#{{ loop.index }}</strong></td>
-                    <td>{{ box.x }}</td>
-                    <td>{{ box.y }}</td>
-                    <td>{{ box.w }}</td>
-                    <td>{{ box.h }}</td>
-                    <td>{{ box.w * box.h }} px²</td>
-                    <td>({{ box.x + (box.w // 2) }}, {{ box.y + (box.h // 2) }})</td>
+                    <td>
+                      <span class="badge badge-success" style="font-size: 0.85rem; text-transform: uppercase;">
+                        {{ obj.class }}
+                      </span>
+                    </td>
+                    <td><code>{{ (obj.confidence * 100)|round(1) }}%</code></td>
+                    <td><code>[{{ obj.bbox[0] }}, {{ obj.bbox[1] }}, {{ obj.bbox[2] }}, {{ obj.bbox[3] }}]</code></td>
+                    <td>{{ (obj.bbox[2] - obj.bbox[0])|round(1) }} x {{ (obj.bbox[3] - obj.bbox[1])|round(1) }} px</td>
                   </tr>
                 {% endfor %}
               {% else %}
                 <tr>
-                  <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 24px;">
-                    No objects detected in this image frame.
+                  <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 24px;">
+                    No objects detected above the confidence threshold.
                   </td>
                 </tr>
               {% endif %}

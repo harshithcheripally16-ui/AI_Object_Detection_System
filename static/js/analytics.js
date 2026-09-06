@@ -1,10 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+  let classesChartInstance = null;
   let timelineChartInstance = null;
-  let modelsChartInstance = null;
 
   const alertContainer = document.getElementById('analytics-alert');
   const refreshBtn = document.getElementById('refresh-logs-btn');
-  const historyTbody = document.getElementById('history-tbody');
 
   function showAlert(message, type = 'success') {
     if (!alertContainer) return;
@@ -28,8 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       updateKPIs(data);
+      renderClassesChart(data.class_distribution || []);
       renderTimelineChart(data.timeline || []);
-      renderModelsChart(data.models_breakdown || []);
     } catch (err) {
       console.error('Error fetching analytics:', err);
     }
@@ -38,13 +37,58 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateKPIs(data) {
     const elImages = document.getElementById('kpi-total-images');
     const elDetections = document.getElementById('kpi-total-detections');
-    const elAvgDet = document.getElementById('kpi-avg-detections');
     const elAvgLat = document.getElementById('kpi-avg-latency');
+    const elTopClass = document.getElementById('kpi-top-class');
 
     if (elImages) elImages.textContent = data.total_images;
-    if (elDetections) elDetections.textContent = data.total_detections;
-    if (elAvgDet) elAvgDet.textContent = data.avg_detections;
-    if (elAvgLat) elAvgLat.innerHTML = `${data.avg_latency_ms} <span style="font-size: 1rem; font-weight: normal;">ms</span>`;
+    if (elDetections) elDetections.textContent = data.total_objects;
+    if (elAvgLat) elAvgLat.innerHTML = `${data.avg_processing_time_ms} <span style="font-size: 1rem; font-weight: normal;">ms</span>`;
+    if (elTopClass) elTopClass.textContent = data.top_class || 'None';
+  }
+
+  function renderClassesChart(distribution) {
+    const ctx = document.getElementById('classesBarChart');
+    if (!ctx) return;
+
+    const labels = distribution.map(item => item.class.toUpperCase());
+    const dataVals = distribution.map(item => item.count);
+
+    if (classesChartInstance) {
+      classesChartInstance.destroy();
+    }
+
+    classesChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels.length > 0 ? labels : ['No Detections'],
+        datasets: [{
+          label: 'Total Detected Instances',
+          data: dataVals.length > 0 ? dataVals : [0],
+          backgroundColor: 'rgba(56, 189, 248, 0.75)',
+          borderColor: '#38bdf8',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#94a3b8' }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#94a3b8', stepSize: 1 }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
   }
 
   function renderTimelineChart(timeline) {
@@ -53,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const labels = timeline.map(item => `#${item.id}`);
     const latencies = timeline.map(item => item.latency_ms);
-    const counts = timeline.map(item => item.count);
+    const counts = timeline.map(item => item.total_count);
 
     if (timelineChartInstance) {
       timelineChartInstance.destroy();
@@ -65,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         labels: labels.length > 0 ? labels : ['No Runs'],
         datasets: [
           {
-            label: 'Inference Latency (ms)',
+            label: 'Processing Time (ms)',
             data: latencies.length > 0 ? latencies : [0],
             borderColor: '#f59e0b',
             backgroundColor: 'rgba(245, 158, 11, 0.1)',
@@ -76,8 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
           {
             label: 'Objects Count',
             data: counts.length > 0 ? counts : [0],
-            borderColor: '#38bdf8',
-            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
             yAxisID: 'yCount',
             tension: 0.3,
             fill: true
@@ -102,9 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
           yCount: {
             type: 'linear',
             position: 'right',
-            title: { display: true, text: 'Detections Count', color: '#38bdf8' },
+            title: { display: true, text: 'Objects Count', color: '#10b981' },
             grid: { drawOnChartArea: false },
-            ticks: { color: '#38bdf8', stepSize: 1 }
+            ticks: { color: '#10b981', stepSize: 1 }
           }
         },
         plugins: {
@@ -114,43 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function renderModelsChart(breakdown) {
-    const ctx = document.getElementById('modelsChart');
-    if (!ctx) return;
-
-    const labels = breakdown.map(item => item.model.toUpperCase());
-    const dataVals = breakdown.map(item => item.runs);
-
-    if (modelsChartInstance) {
-      modelsChartInstance.destroy();
-    }
-
-    modelsChartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels.length > 0 ? labels : ['No Models Run'],
-        datasets: [{
-          data: dataVals.length > 0 ? dataVals : [1],
-          backgroundColor: ['#38bdf8', '#10b981', '#f59e0b', '#a855f7'],
-          borderWidth: 1,
-          borderColor: '#1e293b'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { color: '#f8fafc', padding: 16 } }
-        }
-      }
-    });
-  }
-
   // Handle Delete Actions
   document.addEventListener('click', async (e) => {
     if (e.target && e.target.classList.contains('delete-btn')) {
       const recordId = e.target.getAttribute('data-id');
-      if (!confirm(`Are you sure you want to delete Detection Record #${recordId}?`)) return;
+      if (!confirm(`Are you sure you want to delete YOLOv8 Record #${recordId}?`)) return;
 
       try {
         const res = await fetch(`/api/history/${recordId}`, { method: 'DELETE' });
