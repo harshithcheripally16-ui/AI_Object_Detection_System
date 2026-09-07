@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('timelineChart');
     if (!ctx) return;
 
-    const labels = timeline.map(item => `#${item.id}`);
+    const labels = timeline.map(item => `${item.id}`);
     const latencies = timeline.map(item => item.latency_ms);
     const counts = timeline.map(item => item.total_count);
 
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', async (e) => {
     if (e.target && e.target.classList.contains('delete-btn')) {
       const recordId = e.target.getAttribute('data-id');
-      if (!confirm(`Are you sure you want to delete YOLOv8 Record #${recordId}?`)) return;
+      if (!confirm(`Are you sure you want to delete YOLOv8 Record ${recordId}?`)) return;
 
       try {
         const res = await fetch(`/api/history/${recordId}`, { method: 'DELETE' });
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           const row = document.getElementById(`row-${recordId}`);
           if (row) row.remove();
-          showAlert(`Record #${recordId} deleted successfully.`, 'success');
+          showAlert(`Record ${recordId} deleted successfully.`, 'success');
           fetchAnalyticsData();
         } else {
           showAlert(result.error || 'Failed to delete record.', 'danger');

@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const bboxStr = obj.bbox ? `[${obj.bbox.join(', ')}]` : '-';
           const confPct = Math.round(obj.confidence * 100);
           row.innerHTML = `
-            <td><strong>#${i + 1}</strong></td>
+            <td><strong>${i + 1}</strong></td>
             <td><span class="badge badge-success" style="font-size: 0.8rem; text-transform: uppercase;">${obj.class}</span></td>
             <td><code>${confPct}%</code></td>
             <td><code>${bboxStr}</code></td>

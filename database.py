@@ -66,13 +66,13 @@ def log_detection(filename, result_filename, confidence_threshold, total_count, 
         return c.lastrowid
 
 def get_all_detections(limit=100, offset=0):
-    """Fetches list of detection records ordered by ID descending."""
+    """Fetches list of detection records ordered by ID ascending."""
     with get_db_connection() as conn:
         c = conn.cursor()
         c.execute('''
             SELECT id, filename, result_filename, confidence_threshold, total_count, processing_time_ms, detections_json, timestamp
             FROM detections
-            ORDER BY id DESC
+            ORDER BY id ASC
             LIMIT ? OFFSET ?
         ''', (limit, offset))
         rows = c.fetchall()

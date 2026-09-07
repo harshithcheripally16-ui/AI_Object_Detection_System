@@ -34,7 +34,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <div>
           <a href="/" style="color: var(--accent-primary); text-decoration: none; font-size: 0.9rem;">&larr; Back to Upload</a>
-          <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 6px;">Detection Record #{{ record.id }}</h2>
+          <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 6px;">Detection Record {{ record.id }}</h2>
           <span style="color: var(--text-secondary); font-size: 0.85rem;">Logged on {{ record.timestamp }}</span>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
@@ -82,7 +82,7 @@
           <table class="custom-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th>Index</th>
                 <th>Class Label</th>
                 <th>Confidence</th>
                 <th>Bounding Box [x1, y1, x2, y2]</th>
@@ -93,7 +93,7 @@
               {% if record.detections and record.detections | length > 0 %}
                 {% for obj in record.detections %}
                   <tr>
-                    <td><strong>#{{ loop.index }}</strong></td>
+                    <td><strong>{{ loop.index }}</strong></td>
                     <td>
                       <span class="badge badge-success" style="font-size: 0.85rem; text-transform: uppercase;">
                         {{ obj.class }}

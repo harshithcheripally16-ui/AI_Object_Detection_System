@@ -112,7 +112,7 @@
             {% if history and history | length > 0 %}
               {% for row in history %}
                 <tr id="row-{{ row.id }}">
-                  <td><strong>#{{ row.id }}</strong></td>
+                  <td><strong>{{ row.id }}</strong></td>
                   <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ row.timestamp }}</td>
                   <td><span class="badge badge-info">{{ (row.confidence_threshold * 100)|int }}%</span></td>
                   <td>
