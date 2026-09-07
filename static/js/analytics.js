@@ -158,6 +158,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function renumberTableRows() {
+    const rows = document.querySelectorAll('#history-tbody tr:not(#empty-row)');
+    rows.forEach((row, index) => {
+      const idxCell = row.querySelector('.row-index strong');
+      if (idxCell) {
+        idxCell.textContent = index + 1;
+      }
+    });
+  }
+
   // Handle Delete Actions
   document.addEventListener('click', async (e) => {
     if (e.target && e.target.classList.contains('delete-btn')) {
@@ -170,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           const row = document.getElementById(`row-${recordId}`);
           if (row) row.remove();
+          renumberTableRows();
           showAlert(`Record ${recordId} deleted successfully.`, 'success');
           fetchAnalyticsData();
         } else {
@@ -180,6 +191,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  const clearAllBtn = document.getElementById('clear-all-btn');
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to CLEAR ALL detection history and reset ID counter back to 1? This cannot be undone.')) return;
+
+      try {
+        const res = await fetch('/api/history/clear-all', { method: 'DELETE' });
+        const result = await res.json();
+        if (res.ok) {
+          const tbody = document.getElementById('history-tbody');
+          if (tbody) {
+            tbody.innerHTML = `
+              <tr id="empty-row">
+                <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 32px;">
+                  No detection logs found. Upload and process images to populate the database.
+                </td>
+              </tr>
+            `;
+          }
+          showAlert('All history cleared and ID counter reset to 1.', 'success');
+          fetchAnalyticsData();
+        } else {
+          showAlert(result.error || 'Failed to clear history.', 'danger');
+        }
+      } catch (err) {
+        showAlert('Network error while clearing history.', 'danger');
+      }
+    });
+  }
 
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {

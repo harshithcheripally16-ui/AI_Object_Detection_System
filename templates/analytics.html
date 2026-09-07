@@ -91,16 +91,21 @@
     <div class="card">
       <div class="card-title">
         <span>YOLOv8 Detection History</span>
-        <button id="refresh-logs-btn" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
-          ↻ Refresh
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button id="clear-all-btn" class="btn btn-danger" style="padding: 6px 14px; font-size: 0.85rem;">
+            🗑 Clear All History
+          </button>
+          <button id="refresh-logs-btn" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
+            ↻ Refresh
+          </button>
+        </div>
       </div>
 
       <div class="table-responsive">
         <table class="custom-table" id="history-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Index</th>
               <th>Timestamp</th>
               <th>Confidence Used</th>
               <th>Objects Found</th>
@@ -112,7 +117,7 @@
             {% if history and history | length > 0 %}
               {% for row in history %}
                 <tr id="row-{{ row.id }}">
-                  <td><strong>{{ row.id }}</strong></td>
+                  <td class="row-index"><strong>{{ loop.index }}</strong></td>
                   <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ row.timestamp }}</td>
                   <td><span class="badge badge-info">{{ (row.confidence_threshold * 100)|int }}%</span></td>
                   <td>

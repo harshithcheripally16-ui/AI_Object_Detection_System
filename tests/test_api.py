@@ -108,3 +108,22 @@ def test_delete_history_invalid_id_returns_404(client):
     """Test DELETE /api/history/<id> with non-existent ID returns 404."""
     response = client.delete('/api/history/999999')
     assert response.status_code == 404
+
+def test_clear_all_history(client):
+    """Test DELETE /api/history/clear-all clears table and resets autoincrement sequence."""
+    # Create detection
+    data = {
+        'image': (create_synthetic_image_bytes(), 'sample_clear.jpg'),
+        'confidence': 0.5
+    }
+    client.post('/detect', data=data, content_type='multipart/form-data')
+
+    # Clear all
+    clear_res = client.delete('/api/history/clear-all')
+    assert clear_res.status_code == 200
+    assert clear_res.get_json()["success"] is True
+
+    # Check history is empty
+    hist_res = client.get('/api/history')
+    assert hist_res.status_code == 200
+    assert len(hist_res.get_json()) == 0

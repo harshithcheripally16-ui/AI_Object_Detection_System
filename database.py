@@ -111,7 +111,7 @@ def get_detection_by_id(record_id):
 
 def delete_detection(record_id):
     """
-    Deletes a detection log by primary key.
+    Deletes a detection log by primary key. If table becomes empty, resets autoincrement sequence back to 1.
     
     Returns:
         bool: True if deleted, False if record was not found.
@@ -119,8 +119,27 @@ def delete_detection(record_id):
     with get_db_connection() as conn:
         c = conn.cursor()
         c.execute('DELETE FROM detections WHERE id = ?', (record_id,))
+        deleted = c.rowcount > 0
+        if deleted:
+            c.execute('SELECT COUNT(*) as cnt FROM detections')
+            if c.fetchone()['cnt'] == 0:
+                c.execute("DELETE FROM sqlite_sequence WHERE name='detections'")
         conn.commit()
-        return c.rowcount > 0
+        return deleted
+
+def clear_all_detections():
+    """
+    Deletes all detection records from SQLite and resets the autoincrement ID counter back to 1.
+    
+    Returns:
+        bool: True
+    """
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute('DELETE FROM detections')
+        c.execute("DELETE FROM sqlite_sequence WHERE name='detections'")
+        conn.commit()
+        return True
 
 def get_analytics_summary():
     """

@@ -20,6 +20,7 @@ from database import (
     get_all_detections,
     get_detection_by_id,
     delete_detection,
+    clear_all_detections,
     get_analytics_summary
 )
 
@@ -299,6 +300,30 @@ def api_delete_record(record_id):
         }), 200
     else:
         return jsonify({"error": "Failed to delete record."}), 500
+
+@app.route('/api/history/clear-all', methods=['DELETE'])
+def api_clear_all():
+    """
+    DELETE /api/history/clear-all
+    Clears all detection records from SQLite and resets autoincrement ID counter to 1.
+    """
+    # Clean up non-sample upload files
+    try:
+        for fname in os.listdir(app.config['UPLOAD_FOLDER']):
+            if fname.startswith('upload_') or fname.startswith('result_'):
+                fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
+                try:
+                    os.remove(fpath)
+                except OSError:
+                    pass
+    except Exception:
+        pass
+
+    clear_all_detections()
+    return jsonify({
+        "success": True,
+        "message": "All history cleared and ID counter reset to 1."
+    }), 200
 
 @app.route('/api/analytics-data', methods=['GET'])
 def api_analytics_data():
