@@ -94,43 +94,6 @@ The system performs real-time multi-class object detection across a rich open vo
 
 ---
 
-## 📂 Project Architecture & Directory Structure
-
-```
-AI_Object_Detection_System/
-├── app.py                     # Flask application & REST API routes (GET, POST, DELETE)
-├── detector.py                # OOP ObjectDetector class using Ultralytics YOLO
-├── database.py                # SQLite module with full CRUD operations & analytics
-├── config.py                  # Centralized configuration constants & YOLO vocabulary
-├── requirements.txt           # Production dependencies (Flask, Ultralytics, OpenCV, NumPy)
-├── requirements-dev.txt       # Development & testing dependencies (Pytest, Requests)
-├── .gitignore                 # Excludes caches, temporary databases, and large model weights
-├── models/
-│   ├── yolov8s-worldv2.pt     # Open-vocabulary model weights
-│   └── yolov8n.pt             # Fast nano weights
-├── static/
-│   ├── css/
-│   │   └── style.css          # Glassmorphic UI styling
-│   ├── js/
-│   │   ├── main.js            # Upload logic, confidence slider, bounding box rendering
-│   │   └── analytics.js       # Chart.js visualization & asynchronous CRUD actions
-│   └── uploads/               # Saved original, annotated, and live screenshot images
-├── templates/
-│   ├── index.html             # Upload & real-time detection page with confidence slider
-│   ├── live.html              # Real-time webcam streaming interface
-│   ├── result.html            # Side-by-side inspection & per-detection table
-│   └── analytics.html         # Performance metrics & historical CRUD table
-├── tests/
-│   ├── __init__.py
-│   ├── test_detector.py       # Unit tests for YOLO ObjectDetector OOP engine
-│   └── test_api.py            # API endpoint integration and validation tests
-├── docs/
-│   └── screenshots/           # Application and live detection screenshots
-└── README.md                  # Complete project documentation
-```
-
----
-
 ## 🚀 Installation & Getting Started
 
 ### 1. Clone the Repository
@@ -177,74 +140,6 @@ Run the complete test suite using `pytest`:
 ```bash
 pytest -v tests/
 ```
-
----
-
-## 📡 REST API Reference
-
-### 1. Object Detection Endpoint
-`POST /detect`
-
-**Request Headers**: `Content-Type: multipart/form-data`  
-**Parameters**:
-- `image` (File, Required): Image file (`.png`, `.jpg`, `.jpeg`, `.webp`, Max: 16MB)
-- `confidence` (Float, Optional): Confidence threshold from `0.05` to `0.95` (Default: `0.40`)
-
-**Example `200 OK` Response**:
-```json
-{
-  "id": 12,
-  "result_image": "/static/uploads/result_abc123.jpg",
-  "original_image": "/static/uploads/upload_abc123.jpg",
-  "total_count": 3,
-  "confidence_used": 0.40,
-  "processing_time_ms": 94.5,
-  "result_page_url": "/result/12",
-  "detections": [
-    {"class": "gaming mouse", "confidence": 0.88, "bbox": [140.0, 220.0, 310.0, 390.0]},
-    {"class": "headphones", "confidence": 0.92, "bbox": [320.0, 110.0, 520.0, 340.0]},
-    {"class": "hand", "confidence": 0.79, "bbox": [180.0, 260.0, 280.0, 370.0]}
-  ]
-}
-```
-
-**HTTP Status Codes**:
-- `200 OK`: Detection successful.
-- `400 Bad Request`: Missing file, empty filename, or corrupted image.
-- `413 Payload Too Large`: Upload exceeds 16MB.
-- `415 Unsupported Media Type`: File extension not allowed.
-- `500 Internal Server Error`: Unexpected server or model error.
-
----
-
-### 2. Analytics Telemetry Feed
-`GET /api/analytics-data`
-
-**Response**:
-```json
-{
-  "total_images": 45,
-  "total_objects": 118,
-  "avg_objects_per_image": 2.62,
-  "avg_processing_time_ms": 92.4,
-  "top_class": "Gaming mouse",
-  "class_distribution": [
-    {"class": "gaming mouse", "count": 38},
-    {"class": "headphones", "count": 31},
-    {"class": "hand", "count": 26},
-    {"class": "laptop", "count": 19},
-    {"class": "person", "count": 14}
-  ],
-  "timeline": [ ... ]
-}
-```
-
----
-
-### 3. Historical Detections API
-- `GET /api/history`: List recent detection records.
-- `GET /api/history/<id>`: Retrieve specific detection by ID.
-- `DELETE /api/history/<id>`: Delete record and associated files.
 
 ---
 
