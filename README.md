@@ -1,40 +1,82 @@
-# 🎯 Real-Time Object Detection System
+# Real-Time Object Detection & Analytics System (YOLOv8 & YOLO-World Edition)
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.x-black?style=flat-square&logo=flask)
-![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-purple?style=flat-square)
-![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green?style=flat-square&logo=opencv)
-![SQLite](https://img.shields.io/badge/SQLite-3-blue?style=flat-square&logo=sqlite)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
+[![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-orange.svg)](https://github.com/ultralytics/ultralytics)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-red.svg)](https://opencv.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-lightgrey.svg)](https://sqlite.org/)
+[![Pytest](https://img.shields.io/badge/pytest-Passing-brightgreen.svg)](https://pytest.org/)
 
-A production-grade, full-stack computer vision web application built with **Python**, **YOLOv8 (Ultralytics)**, **Flask**, and **SQLite**. Upload any image and instantly detect 80+ everyday objects — phones, chairs, TVs, people, cars, and more — with confidence scores, bounding box annotations, detection history logging, and a real-time analytics dashboard.
+A production-grade, modular computer vision web application and RESTful API built with **Python, YOLO-World / YOLOv8 (Ultralytics), Flask, SQLite, and modern JavaScript/CSS3**.
 
----
-
-## 📸 Screenshots
-
-### Upload & Detection
-> *(Add screenshot of index.html with confidence slider and upload zone)*
-
-### Results Page
-> *(Add screenshot of result.html showing side-by-side original vs annotated)*
-
-### Analytics Dashboard
-> *(Add screenshot of analytics.html showing charts and history table)*
+The system performs real-time multi-class object detection across a rich open vocabulary of everyday items, tech accessories (gaming mice, headphones, keyboards, laptops), human body parts (hands, faces, person), and living beings. It features real-time **confidence threshold tuning** (5% to 95%), SQLite logging with full CRUD operations, live MJPEG webcam streaming, and an interactive Chart.js analytics dashboard.
 
 ---
 
-## ✨ Features
+## 📸 Real-World Live Detection Screenshots
 
-- 🔍 **Multi-Class Object Detection** — Detects 80+ object categories using YOLOv8n (MS COCO dataset)
-- 🎚️ **Confidence Threshold Slider** — Adjust detection sensitivity from 10% to 90% in real time
-- 📊 **Analytics Dashboard** — Chart.js visualizations: class distribution bar chart + processing time trend
-- 🗄️ **SQLite History Logging** — Every detection run is stored with class names, confidence scores, bounding boxes, and latency
-- 🔁 **Full CRUD REST API** — Create, read, and delete detection records via RESTful endpoints
-- ✅ **Input Validation** — Strict file type, size, and integrity checks with proper HTTP status codes
-- 🧪 **Automated Testing** — `pytest` test suite covering detector logic and all API endpoints
-- 🎨 **Modern Responsive UI** — Glassmorphic design, drag-and-drop upload, mobile-friendly layout
-- ⚡ **Performance Metrics** — Processing time (ms) tracked per inference run
+### 1. Live Webcam Object Detection in Action
+> Real-time detection across live camera feeds with dynamic HUD telemetry (**FPS**, **Model**, **Objects count**, **Latency in ms**) and active bounding boxes on everyday items:
+
+| Live Webcam Detection 1 | Live Webcam Detection 2 |
+|:---:|:---:|
+| ![Live Detection 1](docs/screenshots/live_detection_webcam_1.png) | ![Live Detection 2](docs/screenshots/live_detection_webcam_2.png) |
+
+| Live Webcam Detection 3 | Live Webcam Detection 4 |
+|:---:|:---:|
+| ![Live Detection 3](docs/screenshots/live_detection_webcam_3.png) | ![Live Detection 4](docs/screenshots/live_detection_webcam_4.png) |
+
+---
+
+## 🖼️ Static Image Detection (Real-World Internet Samples)
+
+> Multi-class inference and bounding-box localization on high-resolution real-world test scenes:
+
+### Gaming Gear & Desk Setup Detection
+| Original Real Image | YOLO Annotated Result |
+|:---:|:---:|
+| ![Gaming Mouse Sample](docs/screenshots/gaming_mouse_sample.jpg) | ![Annotated Gaming Mouse](docs/screenshots/annotated_gaming_mouse_sample.jpg) |
+
+### Modern Workspace & Laptop Detection
+| Original Real Image | YOLO Annotated Result |
+|:---:|:---:|
+| ![Workspace Sample](docs/screenshots/workspace_sample.jpg) | ![Annotated Workspace](docs/screenshots/annotated_workspace_sample.jpg) |
+
+---
+
+## 🖥️ Web Application Dashboard & Telemetry
+
+### Main Upload Interface (with Quick Confidence Presets)
+> Drag-and-drop file upload zone with interactive confidence threshold slider (5% to 95%) and one-click preset buttons for high sensitivity (Razer mouse, hands) or strict precision:
+![Upload Dashboard](docs/screenshots/upload_dashboard.png)
+
+### Side-by-Side Result Inspector & Spatial Bounding Box Table
+> High-resolution side-by-side inspection with coordinate metrics, confidence scores, and raw JSON export:
+![Detection Results](docs/screenshots/detection_results.png)
+
+### Real-Time Analytics & Performance Dashboard
+> Real-time system telemetry with KPI cards, Top 10 detected object classes bar chart, latency trend line charts, and SQLite history table with CRUD deletion:
+![Analytics Dashboard](docs/screenshots/analytics_dashboard.png)
+
+---
+
+## 🌟 Key Features
+
+- **Open-Vocabulary & Multi-Class Architecture**: Powered by Ultralytics YOLO-World / YOLOv8 with preloaded real-world vocabulary covering:
+  - 🖱️ **Gaming Gear & Tech**: `gaming mouse`, `computer mouse`, `headphones`, `headset`, `earbuds`, `keyboard`, `laptop`, `monitor`, `webcam`, `microphone`, `cell phone`, `usb cable`, etc.
+  - 🖐️ **Humans & Body Parts**: `person`, `hand`, `face`, `head`, `arm`.
+  - 👓 **Wearables & Everyday Items**: `watch`, `glasses`, `backpack`, `wallet`, `cup`, `water bottle`, `chair`, `desk`, `pen`, `book`, etc.
+  - 🐶 **Living Beings**: `dog`, `cat`, `bird`, `potted plant`, etc.
+- **Dynamic Confidence Threshold Tuning**: Interactive slider (5% to 95%) and preset buttons (`25% Sensitive`, `40% Recommended`, `75% High Precision`, `90% Strict`).
+- **Real-Time Latency Telemetry**: Sub-millisecond profiling tracking inference latency (`processing_time_ms`) on every request.
+- **Strict Input Validation & Security**:
+  - Whitelist validation (`PNG`, `JPG`, `JPEG`, `WEBP`)
+  - 16MB file payload limit (`MAX_CONTENT_LENGTH`)
+  - OpenCV image decode validation (`cv2.imread`)
+  - Standard HTTP status codes (`200`, `400`, `404`, `413`, `415`, `500`)
+- **Full CRUD RESTful API**: Endpoints including `POST /detect`, `GET /api/history`, `GET /api/history/<id>`, and `DELETE /api/history/<id>`.
+- **Relational Persistence**: SQLite storage with automatic schema generation, indexes, and JSON spatial telemetry.
+- **100% Automated Pytest Coverage**: Unit tests for detection logic and API integration tests.
 
 ---
 
@@ -42,298 +84,169 @@ A production-grade, full-stack computer vision web application built with **Pyth
 
 | Layer | Technology |
 |---|---|
-| Language | Python 3.10+ |
-| Object Detection | YOLOv8n (Ultralytics) |
-| Computer Vision | OpenCV |
-| Backend Framework | Flask |
-| Database | SQLite |
-| Frontend | HTML5, CSS3, JavaScript |
-| Charts | Chart.js |
-| Testing | pytest |
-| Version Control | Git |
+| **Deep Learning Engine** | Ultralytics YOLO-World / YOLOv8 (`yolov8s-worldv2.pt` / `yolov8n.pt`) |
+| **Backend Framework** | Flask 3.0 (Python) |
+| **Computer Vision** | OpenCV (`cv2`) & NumPy |
+| **Database** | SQLite 3 (Indexed relational logging) |
+| **Frontend UI** | HTML5, Modern CSS3 Glassmorphism, Vanilla JavaScript |
+| **Data Visualization** | Chart.js 4.x |
+| **Testing Suite** | Pytest, Requests |
 
 ---
 
-## 📁 Project Structure
+## 📂 Project Architecture & Directory Structure
 
 ```
 AI_Object_Detection_System/
-├── app.py                     # Flask application & REST API routes
-├── detector.py                # OOP ObjectDetector class using YOLOv8
-├── database.py                # SQLite module with full CRUD & analytics
-├── config.py                  # Centralized configuration constants
-├── requirements.txt           # Production dependencies
-├── requirements-dev.txt       # Development & testing dependencies
-├── .gitignore
+├── app.py                     # Flask application & REST API routes (GET, POST, DELETE)
+├── detector.py                # OOP ObjectDetector class using Ultralytics YOLO
+├── database.py                # SQLite module with full CRUD operations & analytics
+├── config.py                  # Centralized configuration constants & YOLO vocabulary
+├── requirements.txt           # Production dependencies (Flask, Ultralytics, OpenCV, NumPy)
+├── requirements-dev.txt       # Development & testing dependencies (Pytest, Requests)
+├── .gitignore                 # Excludes caches, temporary databases, and large model weights
 ├── models/
-│   └── yolov8n.pt             # Auto-downloaded on first run (6MB)
+│   ├── yolov8s-worldv2.pt     # Open-vocabulary model weights
+│   └── yolov8n.pt             # Fast nano weights
 ├── static/
-│   ├── css/style.css
+│   ├── css/
+│   │   └── style.css          # Glassmorphic UI styling
 │   ├── js/
-│   │   ├── main.js            # Upload handling, fetch API, confidence slider
-│   │   └── analytics.js       # Chart.js visualizations & CRUD interactions
-│   └── uploads/               # Processed & uploaded image storage
+│   │   ├── main.js            # Upload logic, confidence slider, bounding box rendering
+│   │   └── analytics.js       # Chart.js visualization & asynchronous CRUD actions
+│   └── uploads/               # Saved original, annotated, and live screenshot images
 ├── templates/
-│   ├── index.html             # Upload panel + confidence slider
-│   ├── result.html            # Side-by-side comparison & detections table
-│   └── analytics.html         # KPI cards, charts, history table
+│   ├── index.html             # Upload & real-time detection page with confidence slider
+│   ├── live.html              # Real-time webcam streaming interface
+│   ├── result.html            # Side-by-side inspection & per-detection table
+│   └── analytics.html         # Performance metrics & historical CRUD table
 ├── tests/
 │   ├── __init__.py
-│   ├── test_detector.py       # Unit tests for ObjectDetector class
-│   └── test_api.py            # API endpoint integration tests
-└── README.md
+│   ├── test_detector.py       # Unit tests for YOLO ObjectDetector OOP engine
+│   └── test_api.py            # API endpoint integration and validation tests
+├── docs/
+│   └── screenshots/           # Application and live detection screenshots
+└── README.md                  # Complete project documentation
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation & Getting Started
 
-### Prerequisites
-- Python 3.10 or higher
-- pip
-- Git
-
-### Installation
-
-**1. Clone the repository**
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/harshithcheripally16-ui/AI-Object-Detection-System.git
-cd AI-Object-Detection-System
+git clone https://github.com/harshithcheripally16-ui/AI_Object_Detection_System.git
+cd AI_Object_Detection_System
 ```
 
-**2. Create and activate a virtual environment**
+### 2. Set Up a Virtual Environment
 ```bash
 # Windows
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\activate
 
-# macOS / Linux
-python -m venv venv
+# Linux / macOS
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-**3. Install production dependencies**
+### 3. Install Dependencies
 ```bash
+# Production environment
 pip install -r requirements.txt
-```
 
-**4. Run the application**
-```bash
-python app.py
-```
-
-**5. Open in browser**
-```
-http://127.0.0.1:5000
-```
-
-> **Note:** On first run, `yolov8n.pt` (~6MB) will auto-download from Ultralytics. An active internet connection is required for the first run only.
-
----
-
-## 🧪 Running Tests
-
-**Install development dependencies**
-```bash
+# Development / Testing environment
 pip install -r requirements-dev.txt
 ```
 
-**Run the full test suite**
+### 4. Run the Application
+```bash
+python app.py
+```
+Open your browser and navigate to:
+```
+http://127.0.0.1:5000/
+```
+
+---
+
+## 🧪 Running Automated Tests
+
+Run the complete test suite using `pytest`:
+
 ```bash
 pytest -v tests/
 ```
 
-**Expected output:**
-```
-tests/test_detector.py::test_detector_loads_model         PASSED
-tests/test_detector.py::test_detect_returns_results       PASSED
-tests/test_detector.py::test_detect_blank_image           PASSED
-tests/test_detector.py::test_get_stats_structure          PASSED
-tests/test_detector.py::test_confidence_threshold         PASSED
-tests/test_detector.py::test_draw_boxes_returns_array     PASSED
-tests/test_api.py::test_index_returns_200                 PASSED
-tests/test_api.py::test_detect_valid_image_returns_200    PASSED
-tests/test_api.py::test_detect_no_file_returns_400        PASSED
-tests/test_api.py::test_detect_invalid_extension_returns_415 PASSED
-tests/test_api.py::test_detect_response_has_required_keys PASSED
-tests/test_api.py::test_analytics_data_returns_json       PASSED
-tests/test_api.py::test_delete_history_valid_id_returns_200 PASSED
-tests/test_api.py::test_delete_history_invalid_id_returns_404 PASSED
-
-14 passed in X.XXs
-```
-
 ---
 
-## 📡 API Reference
+## 📡 REST API Reference
 
-### `GET /`
-Returns the main upload and detection interface.
+### 1. Object Detection Endpoint
+`POST /detect`
 
-**Response:** `200 OK` — HTML page
+**Request Headers**: `Content-Type: multipart/form-data`  
+**Parameters**:
+- `image` (File, Required): Image file (`.png`, `.jpg`, `.jpeg`, `.webp`, Max: 16MB)
+- `confidence` (Float, Optional): Confidence threshold from `0.05` to `0.95` (Default: `0.40`)
 
----
-
-### `POST /detect`
-Upload an image for object detection.
-
-**Request:**
-- Content-Type: `multipart/form-data`
-- Body:
-  - `image` — Image file (JPG, PNG, JPEG)
-  - `confidence` — Float (0.1 – 0.9), default `0.5`
-
-**Response — `200 OK`:**
+**Example `200 OK` Response**:
 ```json
 {
-  "result_image": "static/uploads/result_abc123.jpg",
-  "total_count": 4,
-  "processing_time_ms": 187.43,
-  "confidence_used": 0.5,
+  "id": 12,
+  "result_image": "/static/uploads/result_abc123.jpg",
+  "original_image": "/static/uploads/upload_abc123.jpg",
+  "total_count": 3,
+  "confidence_used": 0.40,
+  "processing_time_ms": 94.5,
+  "result_page_url": "/result/12",
   "detections": [
-    { "class": "person", "confidence": 0.91, "bbox": [120, 45, 380, 600] },
-    { "class": "chair",  "confidence": 0.78, "bbox": [400, 200, 600, 580] },
-    { "class": "tv",     "confidence": 0.85, "bbox": [10, 30, 300, 250] },
-    { "class": "mouse",  "confidence": 0.72, "bbox": [500, 400, 560, 440] }
+    {"class": "gaming mouse", "confidence": 0.88, "bbox": [140.0, 220.0, 310.0, 390.0]},
+    {"class": "headphones", "confidence": 0.92, "bbox": [320.0, 110.0, 520.0, 340.0]},
+    {"class": "hand", "confidence": 0.79, "bbox": [180.0, 260.0, 280.0, 370.0]}
   ]
 }
 ```
 
-**Error Responses:**
-
-| Status Code | Reason |
-|---|---|
-| `400 Bad Request` | Missing file or corrupted image |
-| `413 Payload Too Large` | File exceeds 16MB limit |
-| `415 Unsupported Media Type` | Invalid file extension |
-| `500 Internal Server Error` | Unexpected inference error |
+**HTTP Status Codes**:
+- `200 OK`: Detection successful.
+- `400 Bad Request`: Missing file, empty filename, or corrupted image.
+- `413 Payload Too Large`: Upload exceeds 16MB.
+- `415 Unsupported Media Type`: File extension not allowed.
+- `500 Internal Server Error`: Unexpected server or model error.
 
 ---
 
-### `GET /result/<filename>`
-Returns the result detail page for a specific detection run.
+### 2. Analytics Telemetry Feed
+`GET /api/analytics-data`
 
-**Response:** `200 OK` — HTML page
-
----
-
-### `GET /analytics`
-Returns the analytics dashboard page.
-
-**Response:** `200 OK` — HTML page
-
----
-
-### `GET /api/analytics-data`
-Returns aggregated analytics data as JSON for Chart.js.
-
-**Response — `200 OK`:**
+**Response**:
 ```json
 {
-  "total_images": 42,
-  "total_detections": 198,
-  "avg_processing_time_ms": 203.5,
-  "top_class": "person",
-  "class_distribution": {
-    "person": 54,
-    "chair": 31,
-    "tv": 22,
-    "mouse": 18
-  },
-  "latency_trend": [187, 201, 195, 220, 189]
+  "total_images": 45,
+  "total_objects": 118,
+  "avg_objects_per_image": 2.62,
+  "avg_processing_time_ms": 92.4,
+  "top_class": "Gaming mouse",
+  "class_distribution": [
+    {"class": "gaming mouse", "count": 38},
+    {"class": "headphones", "count": 31},
+    {"class": "hand", "count": 26},
+    {"class": "laptop", "count": 19},
+    {"class": "person", "count": 14}
+  ],
+  "timeline": [ ... ]
 }
 ```
 
 ---
 
-### `DELETE /api/history/<int:id>`
-Delete a specific detection record from history.
-
-**Response — `200 OK`:**
-```json
-{ "message": "Record 7 deleted successfully." }
-```
-
-**Response — `404 Not Found`:**
-```json
-{ "error": "Record not found." }
-```
-
----
-
-## ⚙️ Configuration
-
-All constants are managed in `config.py`:
-
-```python
-UPLOAD_FOLDER      = 'static/uploads'
-DB_PATH            = 'detections.db'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024   # 16MB
-YOLO_MODEL_PATH    = 'models/yolov8n.pt'
-DEFAULT_CONFIDENCE = 0.5
-```
-
----
-
-## 🎯 Detectable Object Classes (80 COCO Categories)
-
-```
-person       bicycle      car          motorcycle   airplane
-bus          train        truck        boat         traffic light
-fire hydrant stop sign    bench        bird         cat
-dog          horse        sheep        cow          elephant
-bear         zebra        giraffe      backpack     umbrella
-handbag      tie          suitcase     frisbee      skis
-snowboard    sports ball  kite         baseball bat bottle
-wine glass   cup          fork         knife        spoon
-bowl         banana       apple        sandwich     orange
-broccoli     carrot       pizza        donut        cake
-chair        couch        potted plant bed          dining table
-toilet       tv           laptop       mouse        remote
-keyboard     cell phone   microwave    oven         toaster
-sink         refrigerator book         clock        vase
-scissors     teddy bear   hair drier   toothbrush   ...and more
-```
-
----
-
-## 📝 Git Commit History
-
-```
-feat: initial project setup and config
-feat: add OOP ObjectDetector class with YOLOv8 multi-class detection
-feat: add SQLite database module with CRUD operations
-feat: add Flask REST API endpoints with input validation
-feat: add responsive frontend UI with confidence slider and analytics dashboard
-feat: add pytest unit tests for detector and API
-docs: finalize README with screenshots and API reference
-```
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Commit your changes (`git commit -m 'feat: add your feature'`)
-4. Push to the branch (`git push origin feat/your-feature`)
-5. Open a Pull Request
+### 3. Historical Detections API
+- `GET /api/history`: List recent detection records.
+- `GET /api/history/<id>`: Retrieve specific detection by ID.
+- `DELETE /api/history/<id>`: Delete record and associated files.
 
 ---
 
 ## 📄 License
-
 This project is licensed under the MIT License.
-
----
-
-## 👤 Author
-
-**Harshith Cheripally**
-- GitHub: [@harshithcheripally16-ui](https://github.com/harshithcheripally16-ui)
-- Email: harshithcheripally16@gmail.com
-
----
-
-> ⭐ If you found this project useful, consider starring the repository!
