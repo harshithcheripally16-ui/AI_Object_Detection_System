@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,13 +12,18 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <div class="container">
     <!-- Navbar -->
     <nav class="navbar">
       <a href="/" class="nav-brand">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h5"/></svg>
-        <span>VisionTrack AI <small style="font-size: 0.65rem; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">YOLOv8</small></span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12h5l2-7 4 14 2-7h5" />
+        </svg>
+        <span>VisionTrack AI <small
+            style="font-size: 0.65rem; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">YOLOv8</small></span>
       </a>
       <div class="nav-links">
         <a href="/" class="nav-link">Upload & Detect</a>
@@ -29,7 +35,8 @@
     <!-- Header -->
     <div class="hero" style="margin-bottom: 28px;">
       <h1>YOLOv8 Analytics & Performance Telemetry</h1>
-      <p>Continuous monitoring of multi-class object detection distributions, confidence thresholds, and inference latency trends persisted in SQLite.</p>
+      <p>Continuous monitoring of multi-class object detection distributions, confidence thresholds, and inference
+        latency trends persisted in SQLite.</p>
     </div>
 
     <!-- Alert Container -->
@@ -45,19 +52,23 @@
 
       <div class="metric-card">
         <div class="metric-label">Total Objects Detected</div>
-        <div class="metric-value" id="kpi-total-detections" style="color: var(--accent-green);">{{ summary.total_objects }}</div>
+        <div class="metric-value" id="kpi-total-detections" style="color: var(--accent-green);">{{ summary.total_objects
+          }}</div>
         <div class="metric-sub">Across 80+ COCO classes</div>
       </div>
 
       <div class="metric-card">
         <div class="metric-label">Avg Processing Time</div>
-        <div class="metric-value" id="kpi-avg-latency" style="color: var(--accent-amber);">{{ summary.avg_processing_time_ms }} <span style="font-size: 1rem; font-weight: normal;">ms</span></div>
+        <div class="metric-value" id="kpi-avg-latency" style="color: var(--accent-amber);">{{
+          summary.avg_processing_time_ms }} <span style="font-size: 1rem; font-weight: normal;">ms</span></div>
         <div class="metric-sub">YOLOv8n GPU/CPU latency</div>
       </div>
 
       <div class="metric-card">
         <div class="metric-label">Most Detected Class</div>
-        <div class="metric-value" id="kpi-top-class" style="color: var(--accent-primary); font-size: 1.6rem; text-transform: capitalize;">{{ summary.top_class }}</div>
+        <div class="metric-value" id="kpi-top-class"
+          style="color: var(--accent-primary); font-size: 1.6rem; text-transform: capitalize;">{{ summary.top_class }}
+        </div>
         <div class="metric-sub">Top object frequency</div>
       </div>
     </div>
@@ -115,35 +126,36 @@
           </thead>
           <tbody id="history-tbody">
             {% if history and history | length > 0 %}
-              {% for row in history %}
-                <tr id="row-{{ row.id }}">
-                  <td class="row-index"><strong>{{ loop.index }}</strong></td>
-                  <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ row.timestamp }}</td>
-                  <td><span class="badge badge-info">{{ (row.confidence_threshold * 100)|int }}%</span></td>
-                  <td>
-                    <span class="badge {% if row.total_count > 0 %}badge-success{% else %}badge-amber{% endif %}">
-                      {{ row.total_count }} objects
-                    </span>
-                  </td>
-                  <td><code>{{ row.processing_time_ms }} ms</code></td>
-                  <td>
-                    <div style="display: flex; gap: 8px;">
-                      <a href="/result/{{ row.id }}" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">
-                        Inspect
-                      </a>
-                      <button class="btn btn-danger delete-btn" data-id="{{ row.id }}" style="padding: 4px 10px; font-size: 0.8rem;">
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
+            {% for row in history %}
+            <tr id="row-{{ row.id }}">
+              <td class="row-index"><strong>{{ loop.index }}</strong></td>
+              <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ row.timestamp }}</td>
+              <td><span class="badge badge-info">{{ (row.confidence_threshold * 100)|int }}%</span></td>
+              <td>
+                <span class="badge {% if row.total_count > 0 %}badge-success{% else %}badge-amber{% endif %}">
+                  {{ row.total_count }} objects
+                </span>
+              </td>
+              <td><code>{{ row.processing_time_ms }} ms</code></td>
+              <td>
+                <div style="display: flex; gap: 8px;">
+                  <a href="/result/{{ row.id }}" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">
+                    Inspect
+                  </a>
+                  <button class="btn btn-danger delete-btn" data-id="{{ row.id }}"
+                    style="padding: 4px 10px; font-size: 0.8rem;">
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
             {% else %}
-              <tr id="empty-row">
-                <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 32px;">
-                  No detection logs found. Upload and process images to populate the database.
-                </td>
-              </tr>
+            <tr id="empty-row">
+              <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 32px;">
+                No detection logs found. Upload and process images to populate the database.
+              </td>
+            </tr>
             {% endif %}
           </tbody>
         </table>
@@ -153,4 +165,5 @@
 
   <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
 </body>
+
 </html>
